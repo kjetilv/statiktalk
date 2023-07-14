@@ -10,22 +10,24 @@ import no.nav.helse.rapids_rivers.RapidsConnection
 
 /*
   KMessage(
-    packidge  : <packidge>
-    service   : <service>
-    servicelc : <servicelc>
-    parameters: <parameters:{parameter|<parameter> }>
-    contextual: <contextual>
-  )
+    packidge    : <packidge>
+    service     : <service>
+    servicelc   : <servicelc>
+    servicename : <servicename>
+    parameters  : <parameters:{parameter|<parameter> }>
+    contextual  : <contextual>
+  )             
   contextClass: <contextClass>
 */
 
-fun RapidsConnection.new<service>(): <service> = <service>SendMediator(this)
+fun RapidsConnection.new<service>(): <service> =
+    <service>SendMediator(this)
 
 private class <service>SendMediator(
     rapidsConnection: RapidsConnection
 ) : SendMediatorBase(rapidsConnection), <service> {
 
-    override fun <name>(
+    override fun <servicename>(
 <parameters:{parameter|
         <parameter>: String,
         }><if(contextual)
@@ -34,7 +36,7 @@ private class <service>SendMediator(
     ) {
         send(
             <if(contextual)>context<else>null<endif>,
-            "@event_name" to "<servicelc>",
+            "@event_name" to "<service>_<servicename>",
 <parameters:{parameter|
             "<parameter>" to <parameter>,
             }

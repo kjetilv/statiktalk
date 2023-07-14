@@ -5,9 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.kjetilv.statiktalk.api.Context
-import com.github.kjetilv.statiktalk.test.Factoids
-import com.github.kjetilv.statiktalk.test.listen
-import com.github.kjetilv.statiktalk.test.newFactoids
+import com.github.kjetilv.statiktalk.test.*
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
 import no.nav.helse.rapids_rivers.RapidApplication
@@ -19,6 +17,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.config.SaslConfigs
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
@@ -76,6 +75,41 @@ internal class StatikTalkTest {
 
     @DelicateCoroutinesApi
     @Test
+    fun `should forward message`() {
+        withRapid { rapids ->
+            waitForEvent("application_ready")
+            waitForEvent("application_up")
+
+            rapids.newUserLoggedIn().loggedIn("foo42", "true")
+
+            rapids.listen(object : UserLoggedIn {
+                override fun loggedIn(userId: String, returning: String, context: Context?) {
+                    context?.packet?.set("key", "value")
+                    rapids.newHighValueUserLoggedIn().loggedInWithStatus(
+                        userId,
+                        "elite",
+                        context
+                    )
+                }
+            })
+
+            rapids.listen(object : HighValueUserLoggedIn {
+                override fun loggedInWithStatus(userId: String, status: String, context: Context?) {
+                    assertEquals("foo42", userId)
+                    assertEquals("elite", status)
+                    assertEquals("true", context?.packet?.get("returning")?.textValue())
+                    assertEquals("value", context?.packet?.get("key")?.textValue())
+                }
+            })
+
+            val event = waitForEvent("@HighValueUserLoggedIn_loggedInWithStatus")
+
+            waitForEvent("application_down")
+        }
+    }
+
+    @DelicateCoroutinesApi
+    @Test
     fun `should annoy people with interesting factoids on random subject matter`() {
         withRapid { rapids ->
             waitForEvent("application_ready")
@@ -83,7 +117,7 @@ internal class StatikTalkTest {
             rapids.newFactoids().annoyWith("Cooking", "Heat the oil first")
 
             rapids.listen(object : Factoids {
-                override fun annoyWith(subjectMatter: String, interestingFact: String, ctx: Context?) {
+                override fun annoyWith(subjectMatter: String, interestingFact: String, context: Context?) {
                     factoid[subjectMatter] = interestingFact
                 }
             })

@@ -59,7 +59,7 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             return ST(template).apply {
                 add("packidge", message.packidge)
                 add("service", message.service)
-                add("name", message.name)
+                add("servicename", message.name)
                 add("servicelc", message.service.lowercase())
                 add("parameters", message.parameters)
                 add("contextual", message.contextual)
