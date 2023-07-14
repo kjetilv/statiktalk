@@ -6,6 +6,7 @@ import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.ClassKind.INTERFACE
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
@@ -15,23 +16,29 @@ import java.io.PrintWriter
 class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
     override fun process(resolver: Resolver) = emptyList<KSAnnotated>().also {
+        contextType(resolver).let { contextType ->
+            resolver.getSymbolsWithAnnotation("com.github.kjetilv.statiktalk.api.Talk")
+                .mapNotNull { it as? KSClassDeclaration }
+                .filter { it.classKind == INTERFACE }
+                .distinctBy { it.simpleName }
+                .forEach { decl ->
+                    message(decl, contextType).let { message ->
+                        with(writer(decl, "Sender")) {
+                            println(source(message, senderTemplate))
+                        }
+                        with(writer(decl, "Receiver")) {
+                            println(source(message, receiverTemplate))
+                        }
+                    }
+                }
+        }
+    }
+
+    private fun contextType(resolver: Resolver): KSClassDeclaration {
         val contextType =
             resolver.getClassDeclarationByName("com.github.kjetilv.statiktalk.api.Context")
                 ?: throw IllegalStateException("Could not resolve context type")
-        resolver.getSymbolsWithAnnotation("com.github.kjetilv.statiktalk.api.Talk")
-            .mapNotNull { it as? KSClassDeclaration }
-            .filter { it.classKind == ClassKind.INTERFACE }
-            .distinctBy { it.simpleName }
-            .forEach { decl ->
-                message(decl, contextType).let { message ->
-                    with(writer(decl, "Sender")) {
-                        println(source(message, senderTemplate))
-                    }
-                    with(writer(decl, "Receiver")) {
-                        println(source(message, receiverTemplate))
-                    }
-                }
-            }
+        return contextType
     }
 
     private fun message(decl: KSClassDeclaration, contextType: KSClassDeclaration) =
