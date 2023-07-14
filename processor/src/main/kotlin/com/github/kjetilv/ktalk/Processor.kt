@@ -19,10 +19,7 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
         val interfaces = annotated
             .mapNotNull { it as? KSClassDeclaration }
             .filter { it.classKind == ClassKind.INTERFACE }
-        val aliased = annotated
-            .mapNotNull { it as? KSTypeAlias }
-            .map { it.findActualType() }
-        (interfaces + aliased)
+        interfaces
             .distinctBy { it.simpleName }
             .forEach { decl ->
                 message(decl, contextType).let { message ->
@@ -80,7 +77,7 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
         contextType: KSClassDeclaration
     ): KMessage {
         val valueParameters = fd.parameters
-        val contextual = valueParameters.lastOrNull()?.name?.asString().equals("ctx") ?: false
+        val contextual = valueParameters.lastOrNull()?.name?.asString() == "ctx"
         val parameters = valueParameters.let { if (contextual) it.dropLast(1) else it }
             .map { it.name }
             .map {
@@ -106,14 +103,5 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             "kt"
         )
 
-    val KSClassDeclaration.qualName
-        get() =
-            requireNotNull(qualifiedName) { "Invalid ${KSClassDeclaration::class.simpleName}: $this" }.asString()
-
-    fun KSTypeAlias.findActualType(): KSClassDeclaration =
-        this.type.resolve().declaration.let {
-            if (it is KSTypeAlias) it.findActualType()
-            else it as KSClassDeclaration
-        }
 }
 
