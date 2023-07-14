@@ -5,9 +5,9 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.kjetilv.statiktalk.api.Context
-import com.github.kjetilv.statiktalk.test.Factoid
+import com.github.kjetilv.statiktalk.test.Factoids
 import com.github.kjetilv.statiktalk.test.listen
-import com.github.kjetilv.statiktalk.test.newFactoid
+import com.github.kjetilv.statiktalk.test.newFactoids
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
 import no.nav.helse.rapids_rivers.RapidApplication
@@ -80,9 +80,9 @@ internal class StatikTalkTest {
         withRapid { rapids ->
             waitForEvent("application_ready")
 
-            rapids.newFactoid().annoyWith("Cooking", "Heat the oil first")
+            rapids.newFactoids().annoyWith("Cooking", "Heat the oil first")
 
-            rapids.listen(object : Factoid {
+            rapids.listen(object : Factoids {
                 override fun annoyWith(subjectMatter: String, interestingFact: String, ctx: Context?) {
                     factoid[subjectMatter] = interestingFact
                 }
