@@ -100,11 +100,11 @@ internal class StatikTalkTest {
                     assertEquals("true", context?.packet?.get("returning")?.textValue())
                     assertEquals("value", context?.packet?.get("key")?.textValue())
                 }
-            })
+            }, "returning", "key")
 
-            val event = waitForEvent("@HighValueUserLoggedIn_loggedInWithStatus")
-
-            waitForEvent("application_down")
+            waitForEvent("HighValueUserLoggedIn_loggedInWithStatus")!!.also { event ->
+                assertEquals("value", event.get("key").textValue())
+            }
         }
     }
 

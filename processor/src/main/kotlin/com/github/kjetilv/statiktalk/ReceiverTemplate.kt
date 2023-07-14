@@ -22,21 +22,21 @@ import no.nav.helse.rapids_rivers.RapidsConnection
   contextClass: <contextClass>
 */
 
-fun RapidsConnection.listen(<servicelc>: <service>) =
-    <service>ReceiveMediator(<servicelc>).listenTo(this)
+fun RapidsConnection.listen(<servicelc>: <service>, vararg interestingKeys: String) =
+    <service>ReceiveMediator(<servicelc>).listenTo(this, interestingKeys.toList())
 
 private class <service>ReceiveMediator(
     private val <servicelc>: <service>
 ) : ReceiveMediatorBase() {
 
-    override fun listenTo(connection: RapidsConnection) {
+    override fun listenTo(connection: RapidsConnection, optionalKeys: List\<String>) {
         val parameters = <if(hasParams)>listOf(<parameters:{parameter|
             
             "<parameter>",}>
         )
         <else>emptyList\<String>()
         <endif>
-        listen(connection, "<service>_<servicename>", parameters)
+        listen(connection, "<service>_<servicename>", parameters, optionalKeys)
     }
 
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
