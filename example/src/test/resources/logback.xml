@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="STDOUT_JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>[%d %level %logger %mdc] - %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="no.nav" level="DEBUG" />
+    <logger name="com.github.dockerjava" level="WARN" />
+    <logger name="com.github.kjetilv" level="DEBUG" />
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT_JSON"/>
+    </root>
+</configuration>
