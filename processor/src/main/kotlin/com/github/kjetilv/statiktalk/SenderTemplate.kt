@@ -5,9 +5,6 @@ internal val senderTemplate
         """
 package <packidge>
 
-<if(contextual)>
-import com.github.kjetilv.statiktalk.api.Context
-<else><endif>
 import com.github.kjetilv.statiktalk.api.SendMediatorBase
 import no.nav.helse.rapids_rivers.RapidsConnection
 
@@ -19,6 +16,7 @@ import no.nav.helse.rapids_rivers.RapidsConnection
     parameters: <parameters:{parameter|<parameter> }>
     contextual: <contextual>
   )
+  contextClass: <contextClass>
 */
 
 fun RapidsConnection.new<service>(): <service> = <service>SendMediator(this)
@@ -31,11 +29,11 @@ private class <service>SendMediator(
 <parameters:{parameter|
         <parameter>: String,
         }><if(contextual)
-        >        ctx: Context?
+        >        context: <contextClass>?
         <else><endif>
     ) {
         send(
-            <if(contextual)>ctx<else>null<endif>,
+            <if(contextual)>context<else>null<endif>,
             "@event_name" to "<servicelc>",
 <parameters:{parameter|
             "<parameter>" to <parameter>,

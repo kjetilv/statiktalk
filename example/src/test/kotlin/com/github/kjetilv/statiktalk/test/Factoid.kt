@@ -8,5 +8,5 @@ import com.github.kjetilv.statiktalk.api.Talk
 interface Factoid {
 
     @Message
-    fun annoyWith(subjectMatter: String, interestingFact: String, ctx: Context? = null)
+    fun annoyWith(subjectMatter: String, interestingFact: String, context: Context? = null)
 }

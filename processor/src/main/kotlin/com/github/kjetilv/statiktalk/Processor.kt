@@ -1,15 +1,13 @@
 package com.github.kjetilv.statiktalk
 
+import com.github.kjetilv.statiktalk.api.Context
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
-import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.*
 import com.google.devtools.ksp.symbol.ClassKind.INTERFACE
-import com.google.devtools.ksp.symbol.KSAnnotated
-import com.google.devtools.ksp.symbol.KSClassDeclaration
-import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import org.stringtemplate.v4.ST
 import java.io.PrintWriter
 
@@ -34,24 +32,19 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
         }
     }
 
-    private fun contextType(resolver: Resolver): KSClassDeclaration {
-        val contextType =
-            resolver.getClassDeclarationByName("com.github.kjetilv.statiktalk.api.Context")
-                ?: throw IllegalStateException("Could not resolve context type")
-        return contextType
-    }
+    private fun contextType(resolver: Resolver) =
+        resolver.getClassDeclarationByName("com.github.kjetilv.statiktalk.api.Context")
+            ?.qualifiedName
+            ?: throw IllegalStateException("Could not resolve context type")
 
-    private fun message(decl: KSClassDeclaration, contextType: KSClassDeclaration) =
-        decl.getAllFunctions()
-            .filter { fd ->
-                fd.annotations.any { annotation ->
-                    annotation.shortName.asString() == "Message"
-                }
+    private fun message(decl: KSClassDeclaration, contextType: KSName) =
+        decl.getAllFunctions().filter { fd ->
+            fd.annotations.any { annotation ->
+                annotation.shortName.asString() == "Message"
             }
-            .map { fd ->
-                kMessage(decl, fd, contextType)
-            }
-            .toList()
+        }.map { fd ->
+            kMessage(decl, fd, contextType)
+        }.toList()
             .takeIf { it.size == 1 }
             ?.firstOrNull()
             ?: throw IllegalStateException(
@@ -71,20 +64,20 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
                 add("parameters", message.parameters)
                 add("contextual", message.contextual)
                 add("hasParams", message.parameters.isNotEmpty())
+                add("contextClass", Context::class.java.name)
             }.render()
         } catch (e: Exception) {
             throw IllegalStateException("Failed to render $message with $template", e)
         }
     }
 
-    @Suppress("UNUSED_PARAMETER")
     private fun kMessage(
         decl: KSClassDeclaration,
         fd: KSFunctionDeclaration,
-        contextType: KSClassDeclaration
+        contextType: KSName
     ): KMessage {
         val valueParameters = fd.parameters
-        val contextual = valueParameters.lastOrNull()?.name?.asString() == "ctx"
+        val contextual = valueParameters.lastOrNull()?.type?.toString() == contextType.getShortName()
         val parameters = valueParameters.let { if (contextual) it.dropLast(1) else it }
             .map { it.name }
             .map {

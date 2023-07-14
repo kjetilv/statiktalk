@@ -5,9 +5,6 @@ internal val receiverTemplate
         """
 package <packidge>
 
-<if(contextual)>
-import com.github.kjetilv.statiktalk.api.DefaultContext
-<else><endif>
 import com.github.kjetilv.statiktalk.api.ReceiveMediatorBase
 import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.MessageContext
@@ -21,6 +18,7 @@ import no.nav.helse.rapids_rivers.RapidsConnection
     parameters: <parameters:{parameter|<parameter> }>
     contextual: <contextual>
   )
+  contextClass: <contextClass>
 */
 
 fun RapidsConnection.listen(<servicelc>: <service>) = <service>ReceiveMediator(<servicelc>).listenTo(this)
@@ -41,7 +39,7 @@ private class <service>ReceiveMediator(private val <servicelc>: <service>) : Rec
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
 <parameters:{parameter|
         val <parameter> = packet["<parameter>"].textValue()
-}>        <servicelc>.<name>(<parameters:{parameter|<parameter>,}><if(contextuall)>DefaultContext(packet, context)<else><endif>)
+}>        <servicelc>.<name>(<parameters:{parameter|<parameter>, }><if(contextual)>context(packet, context)<else><endif>)
     }
 }
 """.trimIndent()

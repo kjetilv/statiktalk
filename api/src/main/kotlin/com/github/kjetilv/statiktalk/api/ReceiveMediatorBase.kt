@@ -1,5 +1,7 @@
 package com.github.kjetilv.statiktalk.api
 
+import no.nav.helse.rapids_rivers.JsonMessage
+import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.rapids_rivers.River
 
@@ -19,4 +21,7 @@ abstract class ReceiveMediatorBase : River.PacketListener {
             }
         }.register(this)
     }
+
+    protected fun context(packet: JsonMessage, context: MessageContext) =
+        DefaultContext(packet, context)
 }
