@@ -14,47 +14,24 @@ import java.io.PrintWriter
 
 class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
-    override fun process(resolver: Resolver): List<KSAnnotated> {
-        val annotated = resolver.getSymbolsWithAnnotation("com.github.kjetilv.statiktalk.api.Talk")
+    override fun process(resolver: Resolver) = emptyList<KSAnnotated>().also {
         val contextType =
             resolver.getClassDeclarationByName("com.github.kjetilv.statiktalk.api.Context")
                 ?: throw IllegalStateException("Could not resolve context type")
-        val interfaces = annotated
+        resolver.getSymbolsWithAnnotation("com.github.kjetilv.statiktalk.api.Talk")
             .mapNotNull { it as? KSClassDeclaration }
             .filter { it.classKind == ClassKind.INTERFACE }
-        interfaces
             .distinctBy { it.simpleName }
             .forEach { decl ->
                 message(decl, contextType).let { message ->
-                    with(PrintWriter(mediatorClassFile(decl, "Sender"), true)) {
-                        println(
-                            source(message, senderTemplate)
-                        )
+                    with(writer(decl, "Sender")) {
+                        println(source(message, senderTemplate))
                     }
-                    with(PrintWriter(mediatorClassFile(decl, "Receiver"), true)) {
-                        println(
-                            source(message, receiverTemplate)
-                        )
+                    with(writer(decl, "Receiver")) {
+                        println(source(message, receiverTemplate))
                     }
                 }
             }
-        return emptyList()
-    }
-
-    private fun source(message: KMessage, template: String): String {
-        try {
-            return ST(template).apply {
-                add("packidge", message.packidge)
-                add("service", message.service)
-                add("name", message.name)
-                add("servicelc", message.service.lowercase())
-                add("parameters", message.parameters)
-                add("contextual", message.contextual)
-                add("hasParams", message.parameters.isNotEmpty())
-            }.render()
-        } catch (e: Exception) {
-            throw IllegalStateException("Failed to render $message with $template", e)
-        }
     }
 
     private fun message(decl: KSClassDeclaration, contextType: KSClassDeclaration) =
@@ -73,6 +50,25 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             ?: throw IllegalStateException(
                 "Only interfaces with exactly 1 function are supported, for now: " + decl.simpleName.asString()
             )
+
+    private fun writer(decl: KSClassDeclaration, qualifier: String) =
+        PrintWriter(mediatorClassFile(decl, qualifier), true)
+
+    private fun source(message: KMessage, template: String): String {
+        try {
+            return ST(template).apply {
+                add("packidge", message.packidge)
+                add("service", message.service)
+                add("name", message.name)
+                add("servicelc", message.service.lowercase())
+                add("parameters", message.parameters)
+                add("contextual", message.contextual)
+                add("hasParams", message.parameters.isNotEmpty())
+            }.render()
+        } catch (e: Exception) {
+            throw IllegalStateException("Failed to render $message with $template", e)
+        }
+    }
 
     @Suppress("UNUSED_PARAMETER")
     private fun kMessage(
