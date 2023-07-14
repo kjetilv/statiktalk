@@ -6,7 +6,7 @@
  * This project uses @Incubating APIs which are subject to change.
  */
 
-rootProject.name = "ktalk"
+rootProject.name = "statiktalk"
 
 include("api")
 include("example")

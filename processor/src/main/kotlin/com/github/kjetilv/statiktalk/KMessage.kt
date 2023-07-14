@@ -1,4 +1,4 @@
-package com.github.kjetilv.ktalk
+package com.github.kjetilv.statiktalk
 
 data class KMessage(
     val packidge: String,

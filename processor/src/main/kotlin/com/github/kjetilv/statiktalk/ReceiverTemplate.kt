@@ -1,4 +1,4 @@
-package com.github.kjetilv.ktalk
+package com.github.kjetilv.statiktalk
 
 internal val receiverTemplate
     get() =
@@ -6,9 +6,9 @@ internal val receiverTemplate
 package <packidge>
 
 <if(contextual)>
-import com.github.kjetilv.ktalk.api.DefaultContext
+import com.github.kjetilv.statiktalk.api.DefaultContext
 <else><endif>
-import com.github.kjetilv.ktalk.api.ReceiveMediatorBase
+import com.github.kjetilv.statiktalk.api.ReceiveMediatorBase
 import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.RapidsConnection

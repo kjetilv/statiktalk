@@ -1,4 +1,4 @@
-package com.github.kjetilv.ktalk.api
+package com.github.kjetilv.statiktalk.api
 
 import no.nav.helse.rapids_rivers.RapidsConnection
 import no.nav.helse.rapids_rivers.River

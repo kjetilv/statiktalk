@@ -1,4 +1,4 @@
-package com.github.kjetilv.ktalk
+package com.github.kjetilv.statiktalk
 
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -15,9 +15,9 @@ import java.io.PrintWriter
 class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
-        val annotated = resolver.getSymbolsWithAnnotation("com.github.kjetilv.ktalk.api.Talk")
+        val annotated = resolver.getSymbolsWithAnnotation("com.github.kjetilv.statiktalk.api.Talk")
         val contextType =
-            resolver.getClassDeclarationByName("com.github.kjetilv.ktalk.api.Context")
+            resolver.getClassDeclarationByName("com.github.kjetilv.statiktalk.api.Context")
                 ?: throw IllegalStateException("Could not resolve context type")
         val interfaces = annotated
             .mapNotNull { it as? KSClassDeclaration }

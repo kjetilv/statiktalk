@@ -1,4 +1,4 @@
-package com.github.kjetilv.ktalk.api
+package com.github.kjetilv.statiktalk.api
 
 import kotlin.annotation.AnnotationTarget.FUNCTION
 

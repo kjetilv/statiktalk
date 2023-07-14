@@ -1,13 +1,13 @@
-package com.github.kjetilv.ktalk
+package com.github.kjetilv.statiktalk
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.github.kjetilv.ktalk.api.Context
-import com.github.kjetilv.ktalk.test.Factoid
-import com.github.kjetilv.ktalk.test.listen
-import com.github.kjetilv.ktalk.test.newFactoid
+import com.github.kjetilv.statiktalk.api.Context
+import com.github.kjetilv.statiktalk.test.Factoid
+import com.github.kjetilv.statiktalk.test.listen
+import com.github.kjetilv.statiktalk.test.newFactoid
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
 import no.nav.helse.rapids_rivers.RapidApplication
@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.collections.set
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-internal class KTalkTest {
+internal class StatikTalkTest {
 
     private val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
