@@ -1,0 +1,3 @@
+[submodule "rapids-and-rivers"]
+	path = rapids-and-rivers
+	url = https://github.com/navikt/rapids-and-rivers

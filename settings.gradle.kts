@@ -11,3 +11,5 @@ rootProject.name = "ktalk"
 include("api")
 include("example")
 include("processor")
+
+includeBuild("rapids-and-rivers")
