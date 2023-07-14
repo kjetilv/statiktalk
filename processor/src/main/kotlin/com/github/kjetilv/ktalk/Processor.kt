@@ -5,7 +5,10 @@ import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
-import com.google.devtools.ksp.symbol.*
+import com.google.devtools.ksp.symbol.ClassKind
+import com.google.devtools.ksp.symbol.KSAnnotated
+import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 import org.stringtemplate.v4.ST
 import java.io.PrintWriter
 
@@ -102,6 +105,5 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             "${decl.simpleName.asString()}${qualifier}Mediator",
             "kt"
         )
-
 }
 
