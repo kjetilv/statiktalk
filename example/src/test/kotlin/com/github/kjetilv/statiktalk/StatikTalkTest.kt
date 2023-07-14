@@ -80,12 +80,13 @@ internal class StatikTalkTest {
             waitForEvent("application_ready")
             waitForEvent("application_up")
 
-            rapids.newUserLoggedIn().loggedIn("foo42", "true")
+            val userLoggedIn = rapids.newUserLoggedIn()
+            val highValueUserLoggedIn = rapids.newHighValueUserLoggedIn()
 
             rapids.listen(object : UserLoggedIn {
                 override fun loggedIn(userId: String, returning: String, context: Context?) {
                     context?.packet?.set("key", "value")
-                    rapids.newHighValueUserLoggedIn().loggedInWithStatus(
+                    highValueUserLoggedIn.loggedInWithStatus(
                         userId,
                         "elite",
                         context
@@ -101,6 +102,8 @@ internal class StatikTalkTest {
                     assertEquals("value", context?.packet?.get("key")?.textValue())
                 }
             }, "returning", "key")
+
+            userLoggedIn.loggedIn("foo42", "true")
 
             waitForEvent("HighValueUserLoggedIn_loggedInWithStatus")!!.also { event ->
                 assertEquals("value", event.get("key").textValue())
