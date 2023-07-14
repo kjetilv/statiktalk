@@ -10,12 +10,13 @@ import no.nav.helse.rapids_rivers.RapidsConnection
 
 /*
   KMessage(
-    packidge    : <packidge>
-    service     : <service>
-    servicelc   : <servicelc>
-    servicename : <servicename>
-    parameters  : <parameters:{parameter|<parameter> }>
-    contextual  : <contextual>
+    packidge          : <packidge>
+    service           : <service>
+    servicelc         : <servicelc>
+    servicename       : <servicename>
+    parameters        : <parameters:{parameter|<parameter> }>
+    contextual        : <contextual>
+    contextualNonNull : <contextualNonNull>
   )             
   contextClass: <contextClass>
 */
@@ -31,10 +32,10 @@ private class <service>SendMediator(
 <parameters:{parameter|
         <parameter>: String,
         }><if(contextual)
-        >        context: <contextClass>?
+        >        context: <contextClass><if(contextualNonNull)><else>?<endif>
         <else><endif>
     ) {
-        send(
+        send<if(contextualNonNull)>1<else>0<endif>(
             <if(contextual)>context<else>null<endif>,
             "@event_name" to "<service>_<servicename>",
 <parameters:{parameter|

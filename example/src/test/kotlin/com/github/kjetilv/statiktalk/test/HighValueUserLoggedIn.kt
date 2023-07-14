@@ -8,5 +8,5 @@ import com.github.kjetilv.statiktalk.api.Talk
 interface HighValueUserLoggedIn {
 
     @Message
-    fun loggedInWithStatus(userId: String, status: String, context: Context? = null)
+    fun loggedInWithStatus(userId: String, status: String, context: Context)
 }

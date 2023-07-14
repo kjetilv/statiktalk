@@ -12,12 +12,13 @@ import no.nav.helse.rapids_rivers.RapidsConnection
 
 /*
   KMessage(     
-    packidge    : <packidge>
-    service     : <service>
-    servicelc   : <servicelc>
-    servicename : <servicename>
-    parameters  : <parameters:{parameter|<parameter> }>
-    contextual  : <contextual>
+    packidge          : <packidge>
+    service           : <service>
+    servicelc         : <servicelc>
+    servicename       : <servicename>
+    parameters        : <parameters:{parameter|<parameter> }>
+    contextual        : <contextual>
+    contextualNonNull : <contextualNonNull>
   )
   contextClass: <contextClass>
 */

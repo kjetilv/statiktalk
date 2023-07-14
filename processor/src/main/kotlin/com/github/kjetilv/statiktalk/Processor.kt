@@ -63,6 +63,7 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
                 add("servicelc", message.service.lowercase())
                 add("parameters", message.parameters)
                 add("contextual", message.contextual)
+                add("contextualNonNull", message.contextualNonNull)
                 add("hasParams", message.parameters.isNotEmpty())
                 add("contextClass", Context::class.java.name)
             }.render()
@@ -77,7 +78,9 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
         contextType: KSName
     ): KMessage {
         val valueParameters = fd.parameters
-        val contextual = valueParameters.lastOrNull()?.type?.toString() == contextType.getShortName()
+        val lastParam = valueParameters.lastOrNull()?.type
+        val contextual = lastParam?.toString() == contextType.getShortName()
+        val contextNonNull = contextual && !(lastParam?.resolve()?.isMarkedNullable ?: false)
         val parameters = valueParameters.let { if (contextual) it.dropLast(1) else it }
             .map { it.name }
             .map {
@@ -91,7 +94,8 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             decl.simpleName.asString(),
             fd.simpleName.asString(),
             parameters,
-            contextual
+            contextual,
+            contextNonNull
         )
     }
 

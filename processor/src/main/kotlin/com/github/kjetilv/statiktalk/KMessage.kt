@@ -5,5 +5,6 @@ data class KMessage(
     val service: String,
     val name: String,
     val parameters: List<String>,
-    val contextual: Boolean = false
+    val contextual: Boolean,
+    val contextualNonNull: Boolean
 )

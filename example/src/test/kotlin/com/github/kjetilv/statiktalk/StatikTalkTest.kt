@@ -85,21 +85,21 @@ internal class StatikTalkTest {
 
             rapids.listen(object : UserLoggedIn {
                 override fun loggedIn(userId: String, returning: String, context: Context?) {
-                    context?.packet?.set("key", "value")
+                    context?.set("key", "value")
                     highValueUserLoggedIn.loggedInWithStatus(
                         userId,
                         "elite",
-                        context
+                        context!!
                     )
                 }
             })
 
             rapids.listen(object : HighValueUserLoggedIn {
-                override fun loggedInWithStatus(userId: String, status: String, context: Context?) {
+                override fun loggedInWithStatus(userId: String, status: String, context: Context) {
                     assertEquals("foo42", userId)
                     assertEquals("elite", status)
-                    assertEquals("true", context?.packet?.get("returning")?.textValue())
-                    assertEquals("value", context?.packet?.get("key")?.textValue())
+                    assertEquals("true", context.packet.get("returning").textValue())
+                    assertEquals("value", context.packet.get("key").textValue())
                 }
             }, "returning", "key")
 
