@@ -74,6 +74,7 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
                 "Only interfaces with exactly 1 function are supported, for now: " + decl.simpleName.asString()
             )
 
+    @Suppress("UNUSED_PARAMETER")
     private fun kMessage(
         decl: KSClassDeclaration,
         fd: KSFunctionDeclaration,
