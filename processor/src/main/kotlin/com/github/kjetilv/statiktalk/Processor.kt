@@ -43,7 +43,14 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
                 annotation.shortName.asString() == "Message"
             }
         }.map { fd ->
-            kMessage(decl, fd, contextType)
+            kMessage(
+                decl,
+                fd,
+                fd.annotations.first { annotation ->
+                    annotation.shortName.asString() == "Message"
+                },
+                contextType
+            )
         }.toList()
             .takeIf { it.size == 1 }
             ?.firstOrNull()
@@ -59,22 +66,28 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             return ST(template).apply {
                 add("packidge", message.packidge)
                 add("service", message.service)
-                add("servicename", message.name)
-                add("servicelc", message.service.lowercase())
+                add("serviceCc", camelCase(message.service))
+                add("serviceName", message.name)
+                add("requireServiceName", message.requireServiceName)
                 add("parameters", message.parameters)
                 add("contextual", message.contextual)
                 add("contextualNonNull", message.contextualNonNull)
-                add("hasParams", message.parameters.isNotEmpty())
+                add("additionalKeys", message.additionalKeys)
                 add("contextClass", Context::class.java.name)
-            }.render()
+                add("hasParams", message.parameters.isNotEmpty())
+                add("hasAdditionalKeys", message.additionalKeys.isNotEmpty())
+            }.render().replace(",\\s+\\)".toRegex(), ")")
         } catch (e: Exception) {
             throw IllegalStateException("Failed to render $message with $template", e)
         }
     }
 
+    private fun camelCase(name: String) = name.substring(0, 1).lowercase() + name.substring(1)
+
     private fun kMessage(
         decl: KSClassDeclaration,
         fd: KSFunctionDeclaration,
+        anno: KSAnnotation,
         contextType: KSName
     ): KMessage {
         val valueParameters = fd.parameters
@@ -89,11 +102,21 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
                 }
             }
             .map { it.asString() }
+        val parametersOnly = anno.arguments
+            .first { it.name?.asString() == "parametersOnly" }
+            .let { it.value as? Boolean }
+            ?: false
+        val additionalKeys = anno.arguments
+            .first { it.name?.asString() == "additionalKeys" }
+            .let { it.value as List<*> }
+            .map { it.toString() }
         return KMessage(
             decl.packageName.asString(),
             decl.simpleName.asString(),
             fd.simpleName.asString(),
+            !parametersOnly,
             parameters,
+            additionalKeys,
             contextual,
             contextNonNull
         )

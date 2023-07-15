@@ -11,17 +11,20 @@ abstract class ReceiveMediatorBase : River.PacketListener {
 
     protected fun listen(
         connection: RapidsConnection,
-        eventName: String,
+        eventName: String?,
         requiredKeys: List<String>,
+        additionalKeys: List<String>,
         interestingKeys: List<String>
     ) {
         River(connection).apply {
             validate { message ->
-                message.requireValue("@event_name", eventName)
+                eventName?.also {
+                    message.requireValue("@event_name", it)
+                }
                 requiredKeys.forEach { key ->
                     message.requireKey(key)
                 }
-                interestingKeys.forEach { key ->
+                (interestingKeys + additionalKeys).forEach { key ->
                     message.interestedIn(key)
                 }
             }

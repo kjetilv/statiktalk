@@ -17,14 +17,14 @@ import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.config.SaslConfigs
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.*
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
 import org.testcontainers.utility.DockerImageName
 import java.net.ServerSocket
 import java.time.Duration
 import java.util.concurrent.TimeUnit.SECONDS
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.collections.set
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -83,6 +83,9 @@ internal class StatikTalkTest {
             val userLoggedIn = rapids.newUserLoggedIn()
             val highValueUserLoggedIn = rapids.newHighValueUserLoggedIn()
 
+            val returningElite = AtomicBoolean()
+            val loggedInOk = AtomicBoolean()
+
             rapids.listen(object : UserLoggedIn {
                 override fun loggedIn(userId: String, returning: String, context: Context?) {
                     context?.set("key", "value")
@@ -94,20 +97,39 @@ internal class StatikTalkTest {
                 }
             })
 
-            rapids.listen(object : HighValueUserLoggedIn {
+            rapids.listen(highValueUserLoggedIn = object : HighValueUserLoggedIn {
                 override fun loggedInWithStatus(userId: String, status: String, context: Context) {
-                    assertEquals("foo42", userId)
-                    assertEquals("elite", status)
-                    assertEquals("true", context.packet.get("returning").textValue())
-                    assertEquals("value", context.packet.get("key").textValue())
+                    try {
+                        assertEquals("foo42", userId)
+                        assertEquals("elite", status)
+                        assertEquals("true", context.packet.get("returning").textValue())
+                        assertEquals("value", context.packet.get("key").textValue())
+                    } finally {
+                        loggedInOk.set(true)
+                    }
                 }
-            }, "returning", "key")
+            }, "key")
+
+            rapids.listen(returningElite = object : ReturningElite {
+                    override fun prodigalSon(returning: String, status: String) {
+                        try {
+                            assertEquals("elite", status)
+                            assertEquals("true", returning)
+                        } finally {
+                            returningElite.set(true)
+                        }
+                    }
+                }
+            )
 
             userLoggedIn.loggedIn("foo42", "true")
 
             waitForEvent("HighValueUserLoggedIn_loggedInWithStatus")!!.also { event ->
                 assertEquals("value", event.get("key").textValue())
             }
+
+            assertTrue(waitForTruth("returningElite", returningElite))
+            assertTrue(waitForTruth("loggedInOk", loggedInOk))
         }
     }
 
@@ -145,6 +167,14 @@ internal class StatikTalkTest {
                 messages.map { objectMapper.readTree(it) }
                     .firstOrNull { it.path("@event_name").asText() == event }
             }) { it != null }
+    }
+
+    private fun waitForTruth(name: String, ab: AtomicBoolean): Boolean {
+        return await("wait until $name")
+            .atMost(10, SECONDS)
+            .until({
+                ab.get()
+            }) { it }
     }
 
     private fun consumerProperties(): MutableMap<String, Any> {

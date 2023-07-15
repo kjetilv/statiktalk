@@ -11,23 +11,26 @@ import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.RapidsConnection
 
 /*
-  KMessage(     
+  KMessage(
     packidge          : <packidge>
     service           : <service>
-    servicelc         : <servicelc>
-    servicename       : <servicename>
+    serviceCc         : <serviceCc>
+    serviceName       : <serviceName>
     parameters        : <parameters:{parameter|<parameter> }>
+    additionalKeys    : <additionalKeys:{additionalKey|<additionalKey> }>
     contextual        : <contextual>
     contextualNonNull : <contextualNonNull>
   )
-  contextClass: <contextClass>
+  hasParams         : <hasParams>
+  hasAdditionalKeys : <hasAdditionalKeys>
+  contextClass      : <contextClass>
 */
 
-fun RapidsConnection.listen(<servicelc>: <service>, vararg interestingKeys: String) =
-    <service>ReceiveMediator(<servicelc>).listenTo(this, interestingKeys.toList())
+fun RapidsConnection.listen(<serviceCc>: <service>, vararg interestingKeys: String) =
+    <service>ReceiveMediator(<serviceCc>).listenTo(this, interestingKeys.toList())
 
 private class <service>ReceiveMediator(
-    private val <servicelc>: <service>
+    private val <serviceCc>: <service>
 ) : ReceiveMediatorBase() {
 
     override fun listenTo(connection: RapidsConnection, optionalKeys: List\<String>) {
@@ -37,13 +40,22 @@ private class <service>ReceiveMediator(
         )
         <else>emptyList\<String>()
         <endif>
-        listen(connection, "<service>_<servicename>", parameters, optionalKeys)
+        listen(
+            connection, 
+            <if(requireServiceName)>"<service>_<serviceName>"<else>null<endif>, 
+            parameters,
+            <if(hasAdditionalKeys)>
+            listOf(<additionalKeys:{additionalKey|"<additionalKey>", }>),
+            <else>
+            emptyList(),
+            <endif>
+            optionalKeys)
     }
 
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
 <parameters:{parameter|
         val <parameter> = packet["<parameter>"].textValue()
-}>        <servicelc>.<servicename>(<parameters:{parameter|<parameter>, }><if(contextual)>context(packet, context)<else><endif>)
+}>        <serviceCc>.<serviceName>(<parameters:{parameter|<parameter>, }><if(contextual)>context(packet, context)<else><endif>)
     }
 }
 """.trimIndent()
