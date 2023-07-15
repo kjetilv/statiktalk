@@ -63,7 +63,7 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
     private fun source(message: KMessage, template: String): String {
         try {
-            return ST(template, '⎨', '⎬').apply {
+            return ST(template, '⁅', '⁆').apply {
                 add("packidge", message.packidge)
                 add("service", message.service)
                 add("serviceCc", camelCase(message.service))
