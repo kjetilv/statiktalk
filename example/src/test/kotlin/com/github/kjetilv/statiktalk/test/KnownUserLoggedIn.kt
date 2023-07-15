@@ -5,7 +5,7 @@ import com.github.kjetilv.statiktalk.api.Message
 import com.github.kjetilv.statiktalk.api.Talk
 
 @Talk
-interface HighValueUserLoggedIn {
+interface KnownUserLoggedIn {
 
     @Message(additionalKeys = ["returning"])
     fun loggedInWithStatus(userId: String, status: String, context: Context)

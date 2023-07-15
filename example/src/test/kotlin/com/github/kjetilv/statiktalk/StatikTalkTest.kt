@@ -81,15 +81,15 @@ internal class StatikTalkTest {
             waitForEvent("application_up")
 
             val userLoggedIn = rapids.newUserLoggedIn()
-            val highValueUserLoggedIn = rapids.newHighValueUserLoggedIn()
+            val knownUserLoggedIn = rapids.newKnownUserLoggedIn()
 
-            val returningElite = AtomicBoolean()
+            val returningWithStatus = AtomicBoolean()
             val loggedInOk = AtomicBoolean()
 
             rapids.listen(object : UserLoggedIn {
                 override fun loggedIn(userId: String, returning: String, context: Context?) {
                     context?.set("key", "value")
-                    highValueUserLoggedIn.loggedInWithStatus(
+                    knownUserLoggedIn.loggedInWithStatus(
                         userId,
                         "elite",
                         context!!
@@ -97,7 +97,7 @@ internal class StatikTalkTest {
                 }
             })
 
-            rapids.listen(highValueUserLoggedIn = object : HighValueUserLoggedIn {
+            rapids.listen(knownUserLoggedIn = object : KnownUserLoggedIn {
                 override fun loggedInWithStatus(userId: String, status: String, context: Context) {
                     try {
                         assertEquals("foo42", userId)
@@ -110,13 +110,13 @@ internal class StatikTalkTest {
                 }
             }, "key")
 
-            rapids.listen(returningElite = object : ReturningElite {
+            rapids.listen(returningStatusCustomer = object : ReturningStatusCustomer {
                     override fun prodigalSon(returning: String, status: String) {
                         try {
                             assertEquals("elite", status)
                             assertEquals("true", returning)
                         } finally {
-                            returningElite.set(true)
+                            returningWithStatus.set(true)
                         }
                     }
                 }
@@ -124,11 +124,11 @@ internal class StatikTalkTest {
 
             userLoggedIn.loggedIn("foo42", "true")
 
-            waitForEvent("HighValueUserLoggedIn_loggedInWithStatus")!!.also { event ->
+            waitForEvent("KnownUserLoggedIn_loggedInWithStatus")!!.also { event ->
                 assertEquals("value", event.get("key").textValue())
             }
 
-            assertTrue(waitForTruth("returningElite", returningElite))
+            assertTrue(waitForTruth("returningWithStatus", returningWithStatus))
             assertTrue(waitForTruth("loggedInOk", loggedInOk))
         }
     }
