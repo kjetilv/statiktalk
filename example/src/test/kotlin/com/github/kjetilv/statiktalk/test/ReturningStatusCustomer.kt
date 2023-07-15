@@ -7,5 +7,5 @@ import com.github.kjetilv.statiktalk.api.Talk
 interface ReturningStatusCustomer {
 
     @Message(parametersOnly = true)
-    fun prodigalSon(returning: String, status: String)
+    fun returning(returning: String, status: String)
 }

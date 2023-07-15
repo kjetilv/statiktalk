@@ -1,6 +1,7 @@
 package com.github.kjetilv.statiktalk
 
 import com.github.kjetilv.statiktalk.api.Context
+import com.github.kjetilv.statiktalk.api.Talk
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -15,16 +16,16 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
     override fun process(resolver: Resolver) = emptyList<KSAnnotated>().also {
         contextType(resolver).let { contextType ->
-            resolver.getSymbolsWithAnnotation("com.github.kjetilv.statiktalk.api.Talk")
+            resolver.getSymbolsWithAnnotation(Talk::class.java.name)
                 .mapNotNull { it as? KSClassDeclaration }
                 .filter { it.classKind == INTERFACE }
                 .distinctBy { it.simpleName }
                 .forEach { decl ->
                     message(decl, contextType).let { message ->
-                        with(writer(decl, "Sender")) {
+                        with(writer(decl, "${decl.simpleName.asString()}SenderMediator")) {
                             println(source(message, senderTemplate))
                         }
-                        with(writer(decl, "Receiver")) {
+                        with(writer(decl, "${decl.simpleName.asString()}ReceiverMediator")) {
                             println(source(message, receiverTemplate))
                         }
                     }
@@ -58,8 +59,8 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
                 "Only interfaces with exactly 1 function are supported, for now: " + decl.simpleName.asString()
             )
 
-    private fun writer(decl: KSClassDeclaration, qualifier: String) =
-        PrintWriter(mediatorClassFile(decl, qualifier), true)
+    private fun writer(declaration: KSClassDeclaration, className: String) =
+        PrintWriter(mediatorClassFile(declaration, className), true)
 
     private fun source(message: KMessage, template: String): String {
         try {
@@ -122,11 +123,11 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
         )
     }
 
-    private fun mediatorClassFile(decl: KSClassDeclaration, qualifier: String) =
+    private fun mediatorClassFile(decl: KSClassDeclaration, className: String) =
         codeGenerator.createNewFile(
             Dependencies(true, decl.containingFile!!),
             decl.packageName.asString(),
-            "${decl.simpleName.asString()}${qualifier}Mediator",
+            className,
             "kt"
         )
 }

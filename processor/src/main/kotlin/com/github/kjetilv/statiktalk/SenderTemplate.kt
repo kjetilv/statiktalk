@@ -25,7 +25,7 @@ import no.nav.helse.rapids_rivers.RapidsConnection
   contextClass      : ⁅contextClass⁆
 */
 
-fun RapidsConnection.new⁅service⁆(): ⁅service⁆ =
+fun RapidsConnection.⁅serviceCc⁆(): ⁅service⁆ =
     ⁅service⁆SendMediator(this)
 
 private class ⁅service⁆SendMediator(

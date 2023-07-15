@@ -80,13 +80,12 @@ internal class StatikTalkTest {
             waitForEvent("application_ready")
             waitForEvent("application_up")
 
-            val userLoggedIn = rapids.newUserLoggedIn()
-            val knownUserLoggedIn = rapids.newKnownUserLoggedIn()
-
             val returningWithStatus = AtomicBoolean()
             val loggedInOk = AtomicBoolean()
 
-            rapids.listen(object : UserLoggedIn {
+            val knownUserLoggedIn = rapids.knownUserLoggedIn()
+
+            rapids.listen(userLoggedIn = object : UserLoggedIn {
                 override fun loggedIn(userId: String, returning: String, context: Context?) {
                     context?.set("key", "value")
                     knownUserLoggedIn.loggedInWithStatus(
@@ -111,18 +110,17 @@ internal class StatikTalkTest {
             }, "key")
 
             rapids.listen(returningStatusCustomer = object : ReturningStatusCustomer {
-                    override fun prodigalSon(returning: String, status: String) {
-                        try {
-                            assertEquals("elite", status)
-                            assertEquals("true", returning)
-                        } finally {
-                            returningWithStatus.set(true)
-                        }
+                override fun returning(returning: String, status: String) {
+                    try {
+                        assertEquals("elite", status)
+                        assertEquals("true", returning)
+                    } finally {
+                        returningWithStatus.set(true)
                     }
                 }
-            )
+            })
 
-            userLoggedIn.loggedIn("foo42", "true")
+            rapids.userLoggedIn().loggedIn("foo42", "true")
 
             waitForEvent("KnownUserLoggedIn_loggedInWithStatus")!!.also { event ->
                 assertEquals("value", event.get("key").textValue())
@@ -139,7 +137,7 @@ internal class StatikTalkTest {
         withRapid { rapids ->
             waitForEvent("application_ready")
 
-            rapids.newFactoids().annoyWith("Cooking", "Heat the oil first")
+            rapids.factoids().annoyWith("Cooking", "Heat the oil first")
 
             rapids.listen(object : Factoids {
                 override fun annoyWith(subjectMatter: String, interestingFact: String, context: Context?) {
