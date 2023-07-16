@@ -14,23 +14,23 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
     override fun process(resolver: Resolver) = emptyList<KSAnnotated>().also {
         contextType(resolver).let { contextType ->
-            functionMap(resolver, contextType).forEach { (classDeclaration, messages) ->
+            functionMap(resolver, contextType).forEach { (service, messages) ->
                 messages.forEach { message ->
                     with(
                         writer(
-                            classDeclaration,
-                            "${classDeclaration.simpleName.asString()}SenderMediator"
+                            service,
+                            "${service.service}SenderMediator"
                         )
                     ) {
-                        println(source(message, senderTemplate))
+                        println(source(service, message, senderTemplate))
                     }
                     with(
                         writer(
-                            classDeclaration,
-                            "${classDeclaration.simpleName.asString()}ReceiverMediator"
+                            service,
+                            "${service.service}ReceiverMediator"
                         )
                     ) {
-                        println(source(message, receiverTemplate))
+                        println(source(service, message, receiverTemplate))
                     }
                 }
             }
@@ -41,9 +41,12 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
         resolver.getSymbolsWithAnnotation(Message::class.java.name)
             .mapNotNull { it as? KSFunctionDeclaration }
             .groupBy { declaringClass(it) }
-            .mapValues { (classDeclaration, functionDeclarations) ->
+            .mapKeys { (key, _) ->
+                ksService(key)
+            }
+            .mapValues { (_, functionDeclarations) ->
                 functionDeclarations.map { functionDeclaration ->
-                    message(classDeclaration, functionDeclaration, contextType)
+                    message(functionDeclaration, contextType)
                 }
             }
 
@@ -58,7 +61,6 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             ?: throw IllegalStateException("Could not resolve context type")
 
     private fun message(
-        classDeclaration: KSClassDeclaration,
         functionDeclaration: KSFunctionDeclaration,
         contextType: KSName
     ): KMessage {
@@ -87,9 +89,6 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             .let { it.value as List<*> }
             .map { it.toString() }
         return KMessage(
-            classDeclaration.packageName.asString(),
-            "${classDeclaration.packageName.asString()}.generated",
-            classDeclaration.simpleName.asString(),
             functionDeclaration.simpleName.asString(),
             !parametersOnly,
             parameters,
@@ -99,16 +98,23 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
         )
     }
 
-    private fun writer(declaration: KSClassDeclaration, className: String) =
-        PrintWriter(mediatorClassFile(declaration, className), true)
+    private fun ksService(classDeclaration: KSClassDeclaration) = KService(
+        classDeclaration.packageName.asString(),
+        "${classDeclaration.packageName.asString()}.generated",
+        classDeclaration.simpleName.asString(),
+        classDeclaration.containingFile
+    )
 
-    private fun source(message: KMessage, template: String) =
+    private fun writer(service: KService, className: String) =
+        PrintWriter(codeGenerator.mediatorClassFile(service, className), true)
+
+    private fun source(service: KService, message: KMessage, template: String) =
         try {
             ST(template, '〔', '〕').apply {
-                add("sourcePackidge", message.sourcePackidge)
-                add("packidge", message.packidge)
-                add("service", message.service)
-                add("serviceCc", message.serviceCc)
+                add("sourcePackidge", service.sourcePackidge)
+                add("packidge", service.packidge)
+                add("service", service.service)
+                add("serviceCc", service.serviceCc)
                 add("serviceName", message.name)
                 add("requireServiceName", message.requireServiceName)
                 add("parameters", message.parameters)
@@ -122,14 +128,15 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
         } catch (e: Exception) {
             throw IllegalStateException("Failed to render $message with $template", e)
         }
-
-
-    private fun mediatorClassFile(decl: KSClassDeclaration, className: String) =
-        codeGenerator.createNewFile(
-            Dependencies(true, decl.containingFile!!),
-            "${decl.packageName.asString()}.generated",
-            className,
-            "kt"
-        )
 }
+
+private fun CodeGenerator.mediatorClassFile(decl: KService, className: String) =
+    createNewFile(
+        decl.containingFile
+            ?.let { Dependencies(true, it) }
+            ?: Dependencies(true),
+        decl.packidge,
+        className,
+        "kt"
+    )
 
