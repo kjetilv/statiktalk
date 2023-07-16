@@ -1,6 +1,5 @@
 package com.github.kjetilv.statiktalk
 
-import com.github.kjetilv.statiktalk.api.Context
 import com.github.kjetilv.statiktalk.api.Message
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
@@ -15,32 +14,38 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
     override fun process(resolver: Resolver) = emptyList<KSAnnotated>().also {
         contextType(resolver).let { contextType ->
-            resolver.getSymbolsWithAnnotation(Message::class.java.name)
-                .mapNotNull { it as? KSFunctionDeclaration }
-                .forEach { functionDeclaration ->
-                    declaringClass(functionDeclaration).let { classDeclaration ->
-                        message(classDeclaration, functionDeclaration, contextType).let { message ->
-                            with(
-                                writer(
-                                    classDeclaration,
-                                    "${classDeclaration.simpleName.asString()}SenderMediator"
-                                )
-                            ) {
-                                println(source(message, senderTemplate))
-                            }
-                            with(
-                                writer(
-                                    classDeclaration,
-                                    "${classDeclaration.simpleName.asString()}ReceiverMediator"
-                                )
-                            ) {
-                                println(source(message, receiverTemplate))
-                            }
-                        }
+            functionMap(resolver, contextType).forEach { (classDeclaration, messages) ->
+                messages.forEach { message ->
+                    with(
+                        writer(
+                            classDeclaration,
+                            "${classDeclaration.simpleName.asString()}SenderMediator"
+                        )
+                    ) {
+                        println(source(message, senderTemplate))
+                    }
+                    with(
+                        writer(
+                            classDeclaration,
+                            "${classDeclaration.simpleName.asString()}ReceiverMediator"
+                        )
+                    ) {
+                        println(source(message, receiverTemplate))
                     }
                 }
+            }
         }
     }
+
+    private fun functionMap(resolver: Resolver, contextType: KSName) =
+        resolver.getSymbolsWithAnnotation(Message::class.java.name)
+            .mapNotNull { it as? KSFunctionDeclaration }
+            .groupBy { declaringClass(it) }
+            .mapValues { (classDeclaration, functionDeclarations) ->
+                functionDeclarations.map { functionDeclaration ->
+                    message(classDeclaration, functionDeclaration, contextType)
+                }
+            }
 
     private fun declaringClass(ksFunctionDeclaration: KSFunctionDeclaration) =
         (ksFunctionDeclaration.parentDeclaration as? KSClassDeclaration)?.takeIf {
@@ -103,22 +108,21 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
                 add("sourcePackidge", message.sourcePackidge)
                 add("packidge", message.packidge)
                 add("service", message.service)
-                add("serviceCc", camelCase(message.service))
+                add("serviceCc", message.serviceCc)
                 add("serviceName", message.name)
                 add("requireServiceName", message.requireServiceName)
                 add("parameters", message.parameters)
                 add("contextual", message.contextual)
                 add("contextualNonNull", message.contextualNonNull)
                 add("additionalKeys", message.additionalKeys)
-                add("contextClass", Context::class.java.name)
-                add("hasParams", message.parameters.isNotEmpty())
-                add("hasAdditionalKeys", message.additionalKeys.isNotEmpty())
+                add("contextClass", message.contextClass)
+                add("hasParams", message.hasParams)
+                add("hasAdditionalKeys", message.hasAdditionalKeys)
             }.render().replace(",\\s+\\)".toRegex(), ")")
         } catch (e: Exception) {
             throw IllegalStateException("Failed to render $message with $template", e)
         }
 
-    private fun camelCase(name: String) = name.substring(0, 1).lowercase() + name.substring(1)
 
     private fun mediatorClassFile(decl: KSClassDeclaration, className: String) =
         codeGenerator.createNewFile(
