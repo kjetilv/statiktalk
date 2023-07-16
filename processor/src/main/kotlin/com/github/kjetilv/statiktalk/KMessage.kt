@@ -1,6 +1,7 @@
 package com.github.kjetilv.statiktalk
 
 data class KMessage(
+    val sourcePackidge: String,
     val packidge: String,
     val service: String,
     val name: String,

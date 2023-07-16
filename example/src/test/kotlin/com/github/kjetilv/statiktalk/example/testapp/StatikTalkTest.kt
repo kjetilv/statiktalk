@@ -1,13 +1,11 @@
-package com.github.kjetilv.statiktalk
+package com.github.kjetilv.statiktalk.example.testapp
 
 import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.github.kjetilv.statiktalk.api.Context
-import com.github.kjetilv.statiktalk.test.Factoids
-import com.github.kjetilv.statiktalk.test.generated.factoids
-import com.github.kjetilv.statiktalk.test.generated.handleFactoids
+import com.github.kjetilv.statiktalk.example.testapp.microservices.*
+import com.github.kjetilv.statiktalk.example.testapp.shared.generated.*
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
 import no.nav.helse.rapids_rivers.RapidApplication
@@ -19,14 +17,13 @@ import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.config.SaslConfigs
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assertions.assertNotNull
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
 import org.testcontainers.utility.DockerImageName
 import java.net.ServerSocket
 import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.TimeUnit.SECONDS
-import kotlin.collections.set
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal class StatikTalkTest {
@@ -47,8 +44,6 @@ internal class StatikTalkTest {
     private lateinit var consumerJob: Job
 
     private val messages = mutableListOf<String>()
-
-    private val factoid = mutableMapOf<String, String>()
 
     @DelicateCoroutinesApi
     @BeforeAll
@@ -76,30 +71,49 @@ internal class StatikTalkTest {
 
     @DelicateCoroutinesApi
     @Test
-    fun `should annoy people with interesting factoids on random subject matter`() {
+    fun `should forward message`() {
         withRapid { rapids ->
             waitForEvent("application_ready")
+            waitForEvent("application_up")
 
-            rapids.factoids().annoyWith("Cooking", "Heat the oil first")
+            val sessions = Sessions()
 
-            rapids.handleFactoids(object : Factoids {
-                override fun annoyWith(subjectMatter: String, interestingFact: String, context: Context?) {
-                    factoid[subjectMatter] = interestingFact
-                }
+            rapids.handleUserLoggedIn(UserLoggedInService(
+                rapids.authorizedUserLoggedIn()
+            ) {
+                Instant.EPOCH
             })
+            rapids.handleAuthorizedUserLoggedIn(
+                AuthorizedUserLoggedInService(sessions,
+                    "foo42" to listOf(
+                        {
+                            rapids.statusCustomer().status("foo42", "elite")
+                        },
+                        {
+                            rapids.returningCustomer().returning("foo42", "true")
+                        }
+                    )))
+            rapids.handleStatusCustomer(StatusCustomerService(sessions))
+            rapids.handleReturningCustomer(ReturningCustomerService(sessions))
 
-            requireNotNull(waitForFactoid("Cooking")) { "did not receive factoid before timeout" }
-            assertNotNull(factoid["Cooking"])
+            rapids.userLoggedIn().loggedIn("foo42", "true")
 
+            await("wait until settled")
+                .atMost(10, SECONDS)
+                .until {
+                    sessions.sessions().firstOrNull()?.let {
+                        it == User(
+                            userId = "foo42",
+                            status = "elite",
+                            returning = true,
+                            metadata = mapOf("loginTime" to "1970-01-01")
+                        )
+                    } ?: false
+                }
         }
     }
 
-    private fun waitForFactoid(topic: String) =
-        await("wait for $topic factoid")
-            .atMost(10, SECONDS)
-            .until({
-                factoid[topic]
-            }) { it != null }
+    private fun hasKeys(vararg keys: String): (JsonNode) -> Boolean = { keys.toList().all(it::has) }
 
     private fun waitForEvent(event: String): JsonNode? {
         return await("wait until $event")
