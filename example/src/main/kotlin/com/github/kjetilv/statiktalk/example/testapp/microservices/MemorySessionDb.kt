@@ -1,5 +1,8 @@
 package com.github.kjetilv.statiktalk.example.testapp.microservices
 
+import com.github.kjetilv.statiktalk.example.testapp.shared.SessionDb
+import com.github.kjetilv.statiktalk.example.testapp.shared.User
+
 class MemorySessionDb : SessionDb {
 
     private val logins: MutableMap<User.Id, User> = mutableMapOf()

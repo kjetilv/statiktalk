@@ -1,5 +1,6 @@
 package com.github.kjetilv.statiktalk.example.testapp.microservices
 
+import com.github.kjetilv.statiktalk.example.testapp.shared.User
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 

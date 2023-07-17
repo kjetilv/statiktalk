@@ -1,4 +1,4 @@
-package com.github.kjetilv.statiktalk.example.testapp.microservices
+package com.github.kjetilv.statiktalk.example.testapp.shared
 
 data class User(
     val userId: String,

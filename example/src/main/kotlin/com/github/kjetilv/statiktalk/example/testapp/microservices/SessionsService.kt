@@ -1,7 +1,9 @@
 package com.github.kjetilv.statiktalk.example.testapp.microservices
 
 import com.github.kjetilv.statiktalk.api.Context
+import com.github.kjetilv.statiktalk.example.testapp.shared.SessionDb
 import com.github.kjetilv.statiktalk.example.testapp.shared.Sessions
+import com.github.kjetilv.statiktalk.example.testapp.shared.User
 
 class SessionsService(private val sessionDb: SessionDb) : Sessions {
 
