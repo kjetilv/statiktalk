@@ -4,6 +4,6 @@ import com.github.kjetilv.statiktalk.api.Message
 
 interface ReturningCustomer {
 
-    @Message(parametersOnly = true)
+    @Message
     fun returning(userId: String, returning: String)
 }

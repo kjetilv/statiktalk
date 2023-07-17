@@ -4,6 +4,6 @@ import com.github.kjetilv.statiktalk.api.Message
 
 interface StatusCustomer {
 
-    @Message(parametersOnly = true)
+    @Message
     fun status(userId: String, status: String)
 }

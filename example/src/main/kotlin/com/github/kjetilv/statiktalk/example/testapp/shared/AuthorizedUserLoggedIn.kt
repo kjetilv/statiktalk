@@ -5,6 +5,9 @@ import com.github.kjetilv.statiktalk.api.Message
 
 interface AuthorizedUserLoggedIn {
 
-    @Message(additionalKeys = ["loginTime"])
+    @Message(
+        requireEventName = true,
+        additionalKeys = ["loginTime"]
+    )
     fun authorized(userId: String, context: Context)
 }

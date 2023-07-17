@@ -5,7 +5,7 @@ import com.github.kjetilv.statiktalk.api.Context
 @Suppress("unused")
 data class KMessage(
     val serviceName: String,
-    val requireServiceName: Boolean,
+    val requireEventName: Boolean,
     val parameters: List<String>,
     val additionalKeys: List<String>,
     val contextual: Boolean,

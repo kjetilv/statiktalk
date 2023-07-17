@@ -88,8 +88,8 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
                 }
             }
             .map { it.asString() }
-        val parametersOnly = anno.arguments
-            .first { it.name?.asString() == "parametersOnly" }
+        val requireEventName = anno.arguments
+            .first { it.name?.asString() == "requireEventName" }
             .let { it.value as? Boolean }
             ?: false
         val additionalKeys = anno.arguments
@@ -98,7 +98,7 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             .map { it.toString() }
         return KMessage(
             functionDeclaration.simpleName.asString(),
-            !parametersOnly,
+            requireEventName,
             parameters,
             additionalKeys,
             contextual,

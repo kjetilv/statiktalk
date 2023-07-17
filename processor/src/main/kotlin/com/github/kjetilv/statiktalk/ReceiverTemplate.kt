@@ -46,7 +46,7 @@ private class 〔s.service〕ReceiveMediator(
         〔endif〕
         listen(
             connection, 
-            〔if(m.requireServiceName)〕"〔s.service〕_〔m.serviceName〕"〔else〕null〔endif〕, 
+            〔if(m.requireEventName)〕"〔s.service〕_〔m.serviceName〕"〔else〕null〔endif〕, 
             parameters,
             〔if(m.hasAdditionalKeys)〕
             listOf(〔m.additionalKeys:{additionalKey|"〔additionalKey〕", }〕),

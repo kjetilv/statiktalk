@@ -4,6 +4,6 @@ import com.github.kjetilv.statiktalk.api.Message
 
 interface HelloWorld {
 
-    @Message
+    @Message(requireEventName = true)
     fun hello(name: String)
 }

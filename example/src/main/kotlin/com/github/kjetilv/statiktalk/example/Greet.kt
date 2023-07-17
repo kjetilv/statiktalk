@@ -5,6 +5,6 @@ import com.github.kjetilv.statiktalk.api.Message
 
 interface Greet {
 
-    @Message
+    @Message(requireEventName = true)
     fun greet(name: String, context: Context? = null)
 }

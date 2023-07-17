@@ -8,7 +8,7 @@ import kotlin.annotation.AnnotationTarget.FUNCTION
 @Retention(SOURCE)
 annotation class Message(
 
-    val parametersOnly: Boolean = false,
+    val requireEventName: Boolean = false,
 
     val additionalKeys: Array<String> = []
 )
