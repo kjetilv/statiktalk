@@ -166,7 +166,8 @@ private class FactoidsReceiveMediatorAnnoyWith(
             additionalKeys)
     }
 
-    override fun onPacket(packet: JsonMessage, context: MessageContext) {
+    @Suppress("RedundantNullableReturnType")
+override fun onPacket(packet: JsonMessage, context: MessageContext) {
         val subjectMatter: String = packet["subjectMatter"].textValue()
         val interestingFact: String = packet["interestingFact"].textValue()
  

@@ -75,6 +75,7 @@ private class 《s.service》ReceiveMediator《m.upcasedServiceName》(
             additionalKeys)
     \}
 
+    @Suppress("RedundantNullableReturnType", "RedundantSuppression")
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
 《m.requiredKeys:{requiredKey|
         val 《requiredKey.name》: 《requiredKey.type》 = packet["《requiredKey.name》"].《requiredKey.jsonType》()
