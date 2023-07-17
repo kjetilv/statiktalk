@@ -72,10 +72,10 @@ private class 〔s.service〕ReceiveMediator〔m.upcasedServiceName〕(
 
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
 〔m.requiredKeys:{requiredKey|
-        val 〔requiredKey.name〕: 〔requiredKey.type〕 = packet["〔requiredKey.name〕"].textValue()
+        val 〔requiredKey.name〕: 〔requiredKey.type〕 = packet["〔requiredKey.name〕"].〔requiredKey.jsonType〕()
 }〕 
 〔m.interestingKeys:{interestingKey|
-        val 〔interestingKey.name〕: 〔interestingKey.type〕? = packet["〔interestingKey.name〕"].textValue()
+        val 〔interestingKey.name〕: 〔interestingKey.type〕? = packet["〔interestingKey.name〕"].〔interestingKey.jsonType〕()
 }〕
         〔s.serviceCc〕.〔m.serviceName〕(〔m.keys:{key|〔key.name〕, }〕〔if(m.contextual)〕context(packet, context)〔else〕〔endif〕)
     \}

@@ -34,7 +34,7 @@ private class 〔s.service〕SendMediator(
 〔ms:{m|
     override fun 〔m.serviceName〕(
 〔m.keys:{key|
-        〔key.name〕: String〔if(key.optional)〕?〔endif〕,
+        〔key.name〕: 〔key.type〕〔if(key.optional)〕?〔endif〕,
         }〕〔if(m.contextual)
         〕        context: 〔m.contextClass〕〔if(m.contextualNullable)〕?〔else〕〔endif〕
         〔else〕〔endif〕
