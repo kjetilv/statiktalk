@@ -78,7 +78,8 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
         val lastParam = valueParameters.lastOrNull()?.type
         val contextual = lastParam?.toString() == contextType
             .getShortName()
-        val contextNonNull = contextual && !(lastParam?.resolve()?.isMarkedNullable ?: false)
+        val contextNullable =
+            !contextual || (lastParam?.resolve()?.isMarkedNullable ?: false)
         val parameters = valueParameters.let { if (contextual) it.dropLast(1) else it }
             .map { it.name }
             .map {
@@ -101,7 +102,7 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             parameters,
             additionalKeys,
             contextual,
-            contextNonNull
+            contextNullable
         )
     }
 
@@ -113,6 +114,7 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             ST(template, '〔', '〕').apply {
                 add("s", service)
                 add("m", message)
+                add("debug", true)
             }.render().replace(",\\s+\\)".toRegex(), ")")
         } catch (e: Exception) {
             throw IllegalStateException("Failed to render $message with $template", e)

@@ -2,6 +2,7 @@ package com.github.kjetilv.statiktalk
 
 import com.google.devtools.ksp.symbol.KSFile
 
+@Suppress("unused")
 data class KService(
     val sourcePackidge: String,
     val packidge: String,
@@ -9,7 +10,5 @@ data class KService(
     val containingFile: KSFile?
 ) {
 
-    val serviceCc get() = camelCase(service)
-
-    private fun camelCase(name: String) = name.substring(0, 1).lowercase() + name.substring(1)
+    val serviceCc = service.substring(0, 1).lowercase() + service.substring(1)
 }
