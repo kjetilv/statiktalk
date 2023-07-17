@@ -80,14 +80,11 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             .getShortName()
         val contextNullable =
             !contextual || (lastParam?.resolve()?.isMarkedNullable ?: false)
-        val parameters = valueParameters.let { if (contextual) it.dropLast(1) else it }
-            .map { it.name }
-            .map {
-                requireNotNull(it) {
-                    "Null element of parameters list: $valueParameters"
-                }
-            }
-            .map { it.asString() }
+        val keys = valueParameters.let { if (contextual) it.dropLast(1) else it }
+            .map { KParam(
+                it.name?.asString() ?: throw IllegalStateException("Null name: $it"),
+                it.type.element.toString(),
+                it.type.resolve().isMarkedNullable) }
         val requireEventName = anno.arguments
             .first { it.name?.asString() == "requireEventName" }
             .let { it.value as? Boolean }
@@ -99,7 +96,7 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
         return KMessage(
             functionDeclaration.simpleName.asString(),
             requireEventName,
-            parameters,
+            keys,
             additionalKeys,
             contextual,
             contextNullable

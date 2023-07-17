@@ -22,6 +22,7 @@ import no.nav.helse.rapids_rivers.RapidsConnection
     〔 endif〕
 */
 
+@Suppress("unused")
 fun RapidsConnection.handle〔s.service〕(
     〔s.serviceCc〕: 〔s.service〕, 
     vararg interestingKeys: String
@@ -38,28 +39,38 @@ private class 〔s.service〕ReceiveMediator(
 ) : ReceiveMediatorBase() {
 
     override fun listenTo(connection: RapidsConnection, optionalKeys: List<String>) {
-        val parameters = 〔if(m.hasParams)〕listOf(〔m.parameters:{parameter|
+        val requiredKeys = 〔if(m.hasRequiredKeys)〕listOf(〔m.requiredKeys:{requiredKey|
             
-            "〔parameter〕",}〕
+            "〔requiredKey.name〕",}〕
+        )
+        〔else〕emptyList<String>()
+        〔endif〕
+        val interestingKeys = 〔if(m.hasInterestingKeys)〕listOf(〔m.interestingKeys:{interestingKey|
+            
+            "〔interestingKey.name〕",}〕
         )
         〔else〕emptyList<String>()
         〔endif〕
         listen(
             connection, 
             〔if(m.requireEventName)〕"〔s.service〕_〔m.serviceName〕"〔else〕null〔endif〕, 
-            parameters,
+            requiredKeys,
             〔if(m.hasAdditionalKeys)〕
             listOf(〔m.additionalKeys:{additionalKey|"〔additionalKey〕", }〕),
             〔else〕
-            emptyList(),
+            interestingKeys,
             〔endif〕
             optionalKeys)
     }
 
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
-〔m.parameters:{parameter|
-        val 〔parameter〕 = packet["〔parameter〕"].textValue()
-}〕        〔s.serviceCc〕.〔m.serviceName〕(〔m.parameters:{parameter|〔parameter〕, }〕〔if(m.contextual)〕context(packet, context)〔else〕〔endif〕)
+〔m.requiredKeys:{requiredKey|
+        val 〔requiredKey.name〕: 〔requiredKey.type〕 = packet["〔requiredKey.name〕"].textValue()
+}〕 
+〔m.interestingKeys:{interestingKey|
+        val 〔interestingKey.name〕: 〔interestingKey.type〕? = packet.get("〔interestingKey.name〕").textValue()
+}〕
+        〔s.serviceCc〕.〔m.serviceName〕(〔m.keys:{key|〔key.name〕, }〕〔if(m.contextual)〕context(packet, context)〔else〕〔endif〕)
     }
 }
 """.trimIndent()

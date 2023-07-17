@@ -21,6 +21,7 @@ import no.nav.helse.rapids_rivers.RapidsConnection
     〔 endif〕
 */
 
+@Suppress("unused")
 fun RapidsConnection.〔s.serviceCc〕(): 〔s.service〕 =
     〔s.service〕SendMediator(this)
 
@@ -29,8 +30,8 @@ private class 〔s.service〕SendMediator(
 ) : SendMediatorBase(rapidsConnection), 〔s.service〕 {
 
     override fun 〔m.serviceName〕(
-〔m.parameters:{parameter|
-        〔parameter〕: String,
+〔m.keys:{key|
+        〔key.name〕: String〔if(key.optional)〕?〔endif〕,
         }〕〔if(m.contextual)
         〕        context: 〔m.contextClass〕〔if(m.contextualNullable)〕?〔else〕〔endif〕
         〔else〕〔endif〕
@@ -38,8 +39,8 @@ private class 〔s.service〕SendMediator(
         send〔if(m.contextualNullable)〕0〔else〕1〔endif〕(
             〔if(m.contextual)〕context〔else〕null〔endif〕,
             "@event_name" to "〔s.service〕_〔m.serviceName〕",
-〔m.parameters:{parameter|
-            "〔parameter〕" to 〔parameter〕,
+〔m.keys:{key|
+            "〔key.name〕" to 〔key.name〕,
             }
 〕       )
     }

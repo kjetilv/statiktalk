@@ -83,7 +83,12 @@ internal class StatikTalkTest {
             rapids.factoids().annoyWith("Cooking", "Heat the oil first")
 
             rapids.handleFactoids(object : Factoids {
-                override fun annoyWith(subjectMatter: String, interestingFact: String, context: Context?) {
+                override fun annoyWith(
+                    subjectMatter: String,
+                    interestingFact: String,
+                    aside: String?,
+                    context: Context?
+                ) {
                     factoid[subjectMatter] = interestingFact
                 }
             })

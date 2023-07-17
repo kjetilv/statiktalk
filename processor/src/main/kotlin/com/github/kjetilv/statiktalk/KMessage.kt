@@ -6,7 +6,7 @@ import com.github.kjetilv.statiktalk.api.Context
 data class KMessage(
     val serviceName: String,
     val requireEventName: Boolean,
-    val parameters: List<String>,
+    val keys: List<KParam>,
     val additionalKeys: List<String>,
     val contextual: Boolean,
     val contextualNullable: Boolean
@@ -14,7 +14,13 @@ data class KMessage(
 
     val contextClass: String = contextClassName
 
-    val hasParams get() = parameters.isNotEmpty()
+    val hasRequiredKeys get() = requiredKeys.isNotEmpty()
+
+    val hasInterestingKeys get() = interestingKeys.isNotEmpty()
+
+    val requiredKeys get() = keys.filterNot(KParam::optional)
+
+    val interestingKeys get() = keys.filter(KParam::optional)
 
     val hasAdditionalKeys get() = additionalKeys.isNotEmpty()
 }

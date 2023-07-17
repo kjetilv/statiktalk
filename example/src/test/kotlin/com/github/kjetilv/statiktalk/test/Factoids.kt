@@ -6,5 +6,5 @@ import com.github.kjetilv.statiktalk.api.Message
 interface Factoids {
 
     @Message(requireEventName = true)
-    fun annoyWith(subjectMatter: String, interestingFact: String, context: Context? = null)
+    fun annoyWith(subjectMatter: String, interestingFact: String, aside: String? = null, context: Context? = null)
 }
