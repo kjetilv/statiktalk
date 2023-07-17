@@ -60,6 +60,13 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             ?.qualifiedName
             ?: throw IllegalStateException("Could not resolve context type")
 
+    private fun ksService(classDeclaration: KSClassDeclaration) = KService(
+        classDeclaration.packageName.asString(),
+        "${classDeclaration.packageName.asString()}.generated",
+        classDeclaration.simpleName.asString(),
+        classDeclaration.containingFile
+    )
+
     private fun message(
         functionDeclaration: KSFunctionDeclaration,
         contextType: KSName
@@ -98,32 +105,14 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
         )
     }
 
-    private fun ksService(classDeclaration: KSClassDeclaration) = KService(
-        classDeclaration.packageName.asString(),
-        "${classDeclaration.packageName.asString()}.generated",
-        classDeclaration.simpleName.asString(),
-        classDeclaration.containingFile
-    )
-
     private fun writer(service: KService, className: String) =
         PrintWriter(codeGenerator.mediatorClassFile(service, className), true)
 
     private fun source(service: KService, message: KMessage, template: String) =
         try {
             ST(template, '〔', '〕').apply {
-                add("sourcePackidge", service.sourcePackidge)
-                add("packidge", service.packidge)
-                add("service", service.service)
-                add("serviceCc", service.serviceCc)
-                add("serviceName", message.name)
-                add("requireServiceName", message.requireServiceName)
-                add("parameters", message.parameters)
-                add("contextual", message.contextual)
-                add("contextualNonNull", message.contextualNonNull)
-                add("additionalKeys", message.additionalKeys)
-                add("contextClass", message.contextClass)
-                add("hasParams", message.hasParams)
-                add("hasAdditionalKeys", message.hasAdditionalKeys)
+                add("s", service)
+                add("m", message)
             }.render().replace(",\\s+\\)".toRegex(), ")")
         } catch (e: Exception) {
             throw IllegalStateException("Failed to render $message with $template", e)

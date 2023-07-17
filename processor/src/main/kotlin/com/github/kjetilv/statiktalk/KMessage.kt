@@ -3,7 +3,7 @@ package com.github.kjetilv.statiktalk
 import com.github.kjetilv.statiktalk.api.Context
 
 data class KMessage(
-    val name: String,
+    val serviceName: String,
     val requireServiceName: Boolean,
     val parameters: List<String>,
     val additionalKeys: List<String>,
