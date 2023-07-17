@@ -9,28 +9,30 @@ import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.*
 import org.stringtemplate.v4.ST
 import java.io.PrintWriter
+import java.math.BigDecimal
+import java.math.BigInteger
 
 class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
     override fun process(resolver: Resolver) = emptyList<KSAnnotated>().also {
         contextType(resolver).let { contextType ->
             functionMap(resolver, contextType).forEach { (service, messages) ->
-                    with(
-                        writer(
-                            service,
-                            "${service.service}SenderMediator"
-                        )
-                    ) {
-                        println(source(service, messages, senderTemplate))
-                    }
-                    with(
-                        writer(
-                            service,
-                            "${service.service}ReceiverMediator"
-                        )
-                    ) {
-                        println(source(service, messages, receiverTemplate))
-                    }
+                with(
+                    writer(
+                        service,
+                        "${service.service}SenderMediator"
+                    )
+                ) {
+                    println(source(service, messages, senderTemplate))
+                }
+                with(
+                    writer(
+                        service,
+                        "${service.service}ReceiverMediator"
+                    )
+                ) {
+                    println(source(service, messages, receiverTemplate))
+                }
             }
         }
     }
@@ -79,10 +81,13 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
         val contextNullable =
             !contextual || (lastParam?.resolve()?.isMarkedNullable ?: false)
         val keys = valueParameters.let { if (contextual) it.dropLast(1) else it }
-            .map { KParam(
-                it.name?.asString() ?: throw IllegalStateException("Null name: $it"),
-                it.type.element.toString(),
-                it.type.resolve().isMarkedNullable) }
+            .map {
+                KParam(
+                    it.name?.asString() ?: throw IllegalStateException("Null name: $it"),
+                    it.type.element.toString(),
+                    it.type.resolve().isMarkedNullable
+                )
+            }
         val requireEventName = anno.arguments
             .first { it.name?.asString() == "requireEventName" }
             .let { it.value as? Boolean }
@@ -106,15 +111,36 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
     private fun source(service: KService, messages: List<KMessage>, template: String) =
         try {
+            val imports = imports(messages)
             ST(template, '〔', '〕').apply {
                 add("s", service)
                 add("ms", messages)
                 add("debug", true)
+                add("imports", imports)
             }.render().replace(",\\s+\\)".toRegex(), ")").trim()
         } catch (e: Exception) {
             throw IllegalStateException(
-                "Failed to render ${messages.size} messages with $template", e)
+                "Failed to render ${messages.size} messages with $template", e
+            )
         }
+
+    private fun imports(messages: List<KMessage>): List<String> =
+        messages.flatMap { message ->
+            message.keys.map { key ->
+                key.type
+            }
+        }.distinct().let { types ->
+            explicit(types) + implicit(types, BigDecimal::class.java) + implicit(types, BigInteger::class.java)
+        }
+
+    private fun explicit(types: List<String>) = types.filter { type ->
+        type.startsWith("java") || type.startsWith("kotlin")
+    }
+
+    private fun implicit(
+        types: List<String>,
+        implicit: Class<*>
+    ) = (if (types.contains(implicit.simpleName)) listOf(implicit.name) else emptyList())
 }
 
 private fun CodeGenerator.mediatorClassFile(decl: KService, className: String) =

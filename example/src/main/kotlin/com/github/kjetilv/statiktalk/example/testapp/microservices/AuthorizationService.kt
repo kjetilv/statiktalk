@@ -2,6 +2,7 @@ package com.github.kjetilv.statiktalk.example.testapp.microservices
 
 import com.github.kjetilv.statiktalk.api.Context
 import com.github.kjetilv.statiktalk.example.testapp.shared.Authorization
+import com.github.kjetilv.statiktalk.example.testapp.shared.Sessions
 
 class AuthorizationService(
     private val sessions: Sessions,

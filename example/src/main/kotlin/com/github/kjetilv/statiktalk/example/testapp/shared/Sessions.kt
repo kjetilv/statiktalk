@@ -1,4 +1,4 @@
-package com.github.kjetilv.statiktalk.example.testapp.microservices
+package com.github.kjetilv.statiktalk.example.testapp.shared
 
 import com.github.kjetilv.statiktalk.api.Context
 import com.github.kjetilv.statiktalk.api.Message
@@ -16,7 +16,7 @@ interface Sessions {
     fun userIsReturning(
         userId: String,
         userKey: String,
-        returning: String? = null,
+        returning: Boolean,
         ctx: Context? = null
     )
 
@@ -24,7 +24,7 @@ interface Sessions {
     fun userHasStatus(
         userId: String,
         userKey: String,
-        status: String? = null,
+        status: String,
         ctx: Context? = null
     )
 }

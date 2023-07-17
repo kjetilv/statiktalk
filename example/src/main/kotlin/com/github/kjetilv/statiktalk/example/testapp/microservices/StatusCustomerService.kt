@@ -1,5 +1,6 @@
 package com.github.kjetilv.statiktalk.example.testapp.microservices
 
+import com.github.kjetilv.statiktalk.example.testapp.shared.Sessions
 import com.github.kjetilv.statiktalk.example.testapp.shared.StatusCustomer
 
 class StatusCustomerService(

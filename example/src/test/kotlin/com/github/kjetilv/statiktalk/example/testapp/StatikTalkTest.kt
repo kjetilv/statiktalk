@@ -6,8 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.kjetilv.statiktalk.api.Context
 import com.github.kjetilv.statiktalk.example.testapp.microservices.*
-import com.github.kjetilv.statiktalk.example.testapp.microservices.generated.handleSessions
-import com.github.kjetilv.statiktalk.example.testapp.microservices.generated.sessions
+import com.github.kjetilv.statiktalk.example.testapp.microservices.User
 import com.github.kjetilv.statiktalk.example.testapp.shared.generated.*
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*

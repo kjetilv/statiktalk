@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.kjetilv.statiktalk.api.Context
+import com.github.kjetilv.statiktalk.example.Typed
+import com.github.kjetilv.statiktalk.example.generated.handleTyped
+import com.github.kjetilv.statiktalk.example.generated.typed
 import com.github.kjetilv.statiktalk.test.Factoids
 import com.github.kjetilv.statiktalk.test.generated.factoids
 import com.github.kjetilv.statiktalk.test.generated.handleFactoids
@@ -19,13 +22,21 @@ import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.config.SaslConfigs
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.testcontainers.containers.KafkaContainer
+import org.testcontainers.shaded.com.google.common.util.concurrent.AtomicDouble
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
 import org.testcontainers.utility.DockerImageName
+import java.math.BigDecimal
+import java.math.BigInteger
 import java.net.ServerSocket
 import java.time.Duration
 import java.util.concurrent.TimeUnit.SECONDS
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.collections.set
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -96,6 +107,70 @@ internal class StatikTalkTest {
             requireNotNull(waitForFactoid("Cooking")) { "did not receive factoid before timeout" }
             assertNotNull(factoid["Cooking"])
 
+        }
+    }
+
+    @DelicateCoroutinesApi
+    @Test
+    fun `should support types`() {
+        withRapid { rapids ->
+            waitForEvent("application_ready")
+
+            val nameA = AtomicReference<String>()
+            val fortyTwoA = AtomicInteger()
+            val fiftyFourA = AtomicLong()
+            val wordA = AtomicBoolean()
+            val twiceA = AtomicDouble()
+            val halfA = AtomicDouble()
+            val preciseA = AtomicReference<BigDecimal>()
+            val bigA = AtomicReference<BigInteger>()
+
+            rapids.typed().hello(
+                "John",
+                42,
+                54L,
+                true,
+                84.0,
+                42.0F,
+                BigDecimal.TEN.setScale(10),
+                BigInteger.TWO)
+
+            rapids.handleTyped(object : Typed {
+                override fun hello(
+                    name: String,
+                    fortyTwo: Int,
+                    fiftyFour: Long,
+                    word: Boolean,
+                    twice: Double,
+                    half: Float,
+                    precise: BigDecimal,
+                    big: BigInteger
+                ) {
+                    nameA.set(name)
+                    fortyTwoA.set(fortyTwo)
+                    fiftyFourA.set(fiftyFour)
+                    wordA.set(word)
+                    twiceA.set(twice)
+                    halfA.set(half.toDouble())
+                    preciseA.set(precise)
+                    bigA.set(big)
+                }
+            })
+
+            requireNotNull(await("wait for types")
+                .atMost(10, SECONDS)
+                .until({
+                    bigA.get().intValueExact()
+                }) { it == 2 }) { "did not receive types before timeout" }
+
+            assertEquals("John", nameA.get())
+            assertEquals(42, fortyTwoA.get())
+            assertEquals(54L, fiftyFourA.get())
+            assertEquals(true, wordA.get())
+            assertEquals(84.0, twiceA.get())
+            assertEquals(42.0, halfA.get())
+            assertEquals(10, preciseA.get().toInt())
+            assertEquals(2, bigA.get().toInt())
         }
     }
 
