@@ -127,12 +127,12 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
     private fun source(service: KService, messages: List<KMessage>, template: String) =
         try {
             val imports = imports(messages)
-            ST(template, '〔', '〕').apply {
+            ST(template, '《', '》').apply {
                 add("s", service)
                 add("ms", messages)
                 add("debug", true)
                 add("imports", imports)
-            }.render().replace(",\\s+\\)".toRegex(), ")").trim()
+            }.render().replace(TRAILING, ")").trim()
         } catch (e: Exception) {
             throw IllegalStateException(
                 "Failed to render ${messages.size} messages with $template", e
@@ -168,3 +168,4 @@ private fun CodeGenerator.mediatorClassFile(decl: KService, className: String) =
         "kt"
     )
 
+private val TRAILING = ",\\s+\\)".toRegex()
