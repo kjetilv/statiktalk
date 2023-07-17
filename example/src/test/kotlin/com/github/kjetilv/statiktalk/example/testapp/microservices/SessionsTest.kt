@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test
 
 class SessionsTest {
 
-    val sessions = Sessions()
+    val sessions = SessionsService()
 
     @Test
     fun `user login state`() {

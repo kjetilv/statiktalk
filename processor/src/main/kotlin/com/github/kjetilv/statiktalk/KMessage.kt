@@ -14,6 +14,8 @@ data class KMessage(
 
     val contextClass: String = contextClassName
 
+    val upcasedServiceName = serviceName.substring(0, 1).uppercase() + serviceName.substring(1)
+
     val hasRequiredKeys get() = requiredKeys.isNotEmpty()
 
     val hasInterestingKeys get() = interestingKeys.isNotEmpty()

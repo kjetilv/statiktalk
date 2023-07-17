@@ -76,7 +76,7 @@ internal class StatikTalkTest {
             waitForEvent("application_ready")
             waitForEvent("application_up")
 
-            val sessions = Sessions()
+            val sessions = SessionsService()
 
             rapids.handleUserLoggedIn(UserLoggedInService(
                 rapids.authorizedUserLoggedIn()

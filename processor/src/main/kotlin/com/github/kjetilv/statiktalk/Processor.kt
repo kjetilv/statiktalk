@@ -15,14 +15,13 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
     override fun process(resolver: Resolver) = emptyList<KSAnnotated>().also {
         contextType(resolver).let { contextType ->
             functionMap(resolver, contextType).forEach { (service, messages) ->
-                messages.forEach { message ->
                     with(
                         writer(
                             service,
                             "${service.service}SenderMediator"
                         )
                     ) {
-                        println(source(service, message, senderTemplate))
+                        println(source(service, messages, senderTemplate))
                     }
                     with(
                         writer(
@@ -30,9 +29,8 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
                             "${service.service}ReceiverMediator"
                         )
                     ) {
-                        println(source(service, message, receiverTemplate))
+                        println(source(service, messages, receiverTemplate))
                     }
-                }
             }
         }
     }
@@ -106,15 +104,16 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
     private fun writer(service: KService, className: String) =
         PrintWriter(codeGenerator.mediatorClassFile(service, className), true)
 
-    private fun source(service: KService, message: KMessage, template: String) =
+    private fun source(service: KService, messages: List<KMessage>, template: String) =
         try {
             ST(template, '〔', '〕').apply {
                 add("s", service)
-                add("m", message)
+                add("ms", messages)
                 add("debug", true)
-            }.render().replace(",\\s+\\)".toRegex(), ")")
+            }.render().replace(",\\s+\\)".toRegex(), ")").trim()
         } catch (e: Exception) {
-            throw IllegalStateException("Failed to render $message with $template", e)
+            throw IllegalStateException(
+                "Failed to render ${messages.size} messages with $template", e)
         }
 }
 

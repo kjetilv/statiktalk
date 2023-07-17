@@ -7,14 +7,14 @@ import no.nav.helse.rapids_rivers.River
 
 abstract class ReceiveMediatorBase : River.PacketListener {
 
-    abstract fun listenTo(connection: RapidsConnection, optionalKeys: List<String> = emptyList())
+    abstract fun listenTo(connection: RapidsConnection, additionalKeys: List<String> = emptyList())
 
     protected fun listen(
         connection: RapidsConnection,
         eventName: String?,
         requiredKeys: List<String>,
-        additionalKeys: List<String>,
-        interestingKeys: List<String>
+        interestingKeys: List<String>,
+        additionalKeys: List<String>
     ) {
         River(connection).apply {
             validate { message ->
