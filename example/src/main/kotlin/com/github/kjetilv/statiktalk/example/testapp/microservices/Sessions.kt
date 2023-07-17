@@ -5,9 +5,19 @@ import com.github.kjetilv.statiktalk.api.Message
 
 interface Sessions {
 
-    @Message
-    fun loggedIn(userId: String, ctx: Context? = null)
+    @Message(requireEventName = true)
+    fun loggedIn(
+        userId: String,
+        userKey: String,
+        ctx: Context? = null
+    )
 
-    @Message
-    fun userChange(userId: String, returning: String? = null, status: String? = null, ctx: Context? = null)
+    @Message(requireEventName = true)
+    fun userChange(
+        userId: String,
+        userKey: String,
+        returning: String? = null,
+        status: String? = null,
+        ctx: Context? = null
+    )
 }

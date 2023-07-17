@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.kjetilv.statiktalk.example.testapp.microservices.*
+import com.github.kjetilv.statiktalk.example.testapp.microservices.generated.handleSessions
+import com.github.kjetilv.statiktalk.example.testapp.microservices.generated.sessions
 import com.github.kjetilv.statiktalk.example.testapp.shared.generated.*
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
@@ -71,49 +73,50 @@ internal class StatikTalkTest {
 
     @DelicateCoroutinesApi
     @Test
-    fun `should forward message`() {
+    fun `should login and collect information`() {
         withRapid { rapids ->
             waitForEvent("application_ready")
             waitForEvent("application_up")
 
-            val sessions = SessionsService()
+            val statusMap = mapOf("foo42" to "elite")
+            val authorizedUsers = mapOf("foo42" to "123")
+            val returningUsers = setOf("foo42")
 
-            rapids.handleUserLoggedIn(UserLoggedInService(
-                rapids.authorizedUserLoggedIn()
-            ) {
-                Instant.EPOCH
-            })
+            val memorySessions = MemorySessions()
+
+            rapids.handleSessions(
+                SessionsService(memorySessions)
+            )
+
+            rapids.handleUserLoggedIn(
+                UserLoggedInService(rapids.authorizedUserLoggedIn()) { Instant.EPOCH }
+            )
             rapids.handleAuthorizedUserLoggedIn(
-                AuthorizedUserLoggedInService(sessions,
-                    "foo42" to listOf(
-                        {
-                            rapids.statusCustomer().status("foo42", "elite")
-                        },
-                        {
-                            rapids.returningCustomer().returning("foo42", "true")
-                        }
-                    )))
-            rapids.handleStatusCustomer(StatusCustomerService(sessions))
-            rapids.handleReturningCustomer(ReturningCustomerService(sessions))
+                AuthorizedUserLoggedInService(rapids.sessions(), authorizedUsers)
+            )
+            rapids.handleStatusCustomer(
+                StatusCustomerService(statusMap, rapids.sessions())
+            )
+            rapids.handleReturningCustomer(
+                ReturningCustomerService(returningUsers, rapids.sessions())
+            )
 
-            rapids.userLoggedIn().loggedIn("foo42", "true")
+            rapids.userLoggedIn().loggedIn("foo42")
 
             await("wait until settled")
                 .atMost(10, SECONDS)
                 .until {
-                    sessions.sessions().firstOrNull()?.let {
+                    memorySessions.sessions().firstOrNull()?.let {
                         it == User(
                             userId = "foo42",
+                            userKey = "123",
                             status = "elite",
-                            returning = true,
-                            metadata = mapOf("loginTime" to "1970-01-01")
+                            returning = true
                         )
                     } ?: false
                 }
         }
     }
-
-    private fun hasKeys(vararg keys: String): (JsonNode) -> Boolean = { keys.toList().all(it::has) }
 
     private fun waitForEvent(event: String): JsonNode? {
         return await("wait until $event")

@@ -3,16 +3,16 @@ package com.github.kjetilv.statiktalk.example.testapp.microservices
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class SessionsTest {
+class MemorySessionsTest {
 
-    val sessions = SessionsService()
+    val sessions = MemorySessions()
 
     @Test
     fun `user login state`() {
 
         assertTrue(userList().isEmpty())
 
-        sessions.loggedIn(User("foo", metadata = mapOf("foo" to "bar")))
+        sessions.loggedIn(User("foo", "123", metadata = mapOf("foo" to "bar")))
         assertFalse(userList().isEmpty())
 
         assertUser {
@@ -21,7 +21,7 @@ class SessionsTest {
             assertNull(it.status)
         }
 
-        sessions.userChange(User("foo", status = "elite"))
+        sessions.userChange(User("foo", "123", status = "elite"))
         assertFalse(userList().isEmpty())
 
         assertUser {
@@ -33,12 +33,12 @@ class SessionsTest {
 
     @Test
     fun `user login state, disordered`() {
-        sessions.userChange(User("foo", status = "elite"))
-        sessions.userChange(User("foo", metadata = mapOf("foo" to "bar")))
+        sessions.userChange(User("foo", "123", status = "elite"))
+        sessions.userChange(User("foo", "123", metadata = mapOf("foo" to "bar")))
 
         assertTrue(sessions.sessions().isEmpty())
 
-        sessions.loggedIn(User("foo"))
+        sessions.loggedIn(User("foo", "123"))
         assertFalse(userList().isEmpty())
 
         assertUser {
@@ -47,7 +47,7 @@ class SessionsTest {
             assertNull(it.returning)
         }
 
-        sessions.userChange(User("foo", returning = true))
+        sessions.userChange(User("foo", "123", returning = true))
         assertUser {
             assertEquals("foo", it.userId)
             assertEquals("elite", it.status)

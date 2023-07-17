@@ -5,5 +5,5 @@ import com.github.kjetilv.statiktalk.api.Message
 interface ReturningCustomer {
 
     @Message
-    fun returning(userId: String, returning: String)
+    fun returning(userId: String, userKey: String)
 }

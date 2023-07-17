@@ -6,5 +6,5 @@ import com.github.kjetilv.statiktalk.api.Message
 interface UserLoggedIn {
 
     @Message(requireEventName = true)
-    fun loggedIn(userId: String, returning: String, context: Context? = null)
+    fun loggedIn(userId: String, context: Context? = null)
 }

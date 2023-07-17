@@ -12,7 +12,7 @@ class UserLoggedInService(
     private val time: () -> Instant
     ) : UserLoggedIn {
 
-    override fun loggedIn(userId: String, returning: String, context: Context?) {
+    override fun loggedIn(userId: String, context: Context?) {
         context?.set("loginTime", time().atZone(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_LOCAL_DATE))
         authorizedUserLoggedIn.authorized(
             userId,

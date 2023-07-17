@@ -48,13 +48,15 @@ private class 〔s.service〕ReceiveMediator〔m.upcasedServiceName〕(
             
             "〔requiredKey.name〕",}〕
         )
-        〔else〕emptyList<String>()
+        〔else〕
+            emptyList<String>()
         〔endif〕
         val interestingKeys = 〔if(m.hasInterestingKeys)〕listOf(〔m.interestingKeys:{interestingKey|
             
             "〔interestingKey.name〕",}〕
         )
-        〔else〕emptyList<String>()
+        〔else〕
+            emptyList<String>()
         〔endif〕
         listen(
             connection, 

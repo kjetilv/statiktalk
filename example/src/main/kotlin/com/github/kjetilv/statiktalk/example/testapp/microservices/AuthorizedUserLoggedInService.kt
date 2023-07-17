@@ -4,25 +4,13 @@ import com.github.kjetilv.statiktalk.api.Context
 import com.github.kjetilv.statiktalk.example.testapp.shared.AuthorizedUserLoggedIn
 
 class AuthorizedUserLoggedInService(
-    private val sessions: SessionsService,
-    vararg actions: Pair<String, List<() -> Unit>>
+    private val sessions: Sessions,
+    private val authorized: Map<String, String>
 ) : AuthorizedUserLoggedIn {
 
-    private val actionMap = mapOf(*actions)
-
-    private val authorized = actionMap.keys
-
     override fun authorized(userId: String, context: Context) {
-        if (authorized.contains(userId)) {
-            sessions.loggedIn(
-                User(
-                    userId,
-                    metadata = mapOf(
-                        "loginTime" to context.packet["loginTime"].textValue()
-                    )
-                )
-            )
-            actionMap[userId]?.forEach { it() }
+        authorized[userId]?.also { key ->
+            sessions.loggedIn(userId, key, context)
         }
     }
 }
