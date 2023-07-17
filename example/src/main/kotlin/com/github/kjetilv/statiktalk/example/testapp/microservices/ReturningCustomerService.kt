@@ -4,8 +4,8 @@ import com.github.kjetilv.statiktalk.example.testapp.shared.ReturningCustomer
 import com.github.kjetilv.statiktalk.example.testapp.shared.Sessions
 
 class ReturningCustomerService(
-    private val knownCustomers: Set<String> = emptySet(),
-    private val sessions: Sessions
+    private val sessions: Sessions,
+    private val knownCustomers: Set<String> = emptySet()
 ) : ReturningCustomer {
 
     override fun returning(userId: String, userKey: String) {

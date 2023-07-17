@@ -3,9 +3,9 @@ package com.github.kjetilv.statiktalk.example.testapp.microservices
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class MemorySessionsTest {
+class MemorySessionDbTest {
 
-    val sessions = MemorySessions()
+    val sessions = MemorySessionDb()
 
     @Test
     fun `user login state`() {

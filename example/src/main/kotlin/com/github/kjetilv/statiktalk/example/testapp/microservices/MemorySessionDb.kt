@@ -1,24 +1,24 @@
 package com.github.kjetilv.statiktalk.example.testapp.microservices
 
-class MemorySessions {
+class MemorySessionDb : SessionDb {
 
     private val logins: MutableMap<User.Id, User> = mutableMapOf()
 
     private val changes: MutableMap<User.Id, List<User>> = mutableMapOf()
 
-    fun loggedIn(user: User) {
+    override fun loggedIn(user: User) {
         logins.compute(user.id) { _, ex ->
             change(ex, user)
         }
     }
 
-    fun userChange(change: User) {
+    override fun userChange(change: User) {
         changes.compute(change.id) { _, list ->
             list?.plus(change) ?: listOf(change)
         }
     }
 
-    fun sessions() =
+    override fun sessions() =
         logins.values.toList().sortedBy(User::userId)
             .map { user ->
                 changes[user.id]?.fold(user, this::change) ?: user

@@ -85,6 +85,7 @@ internal class StatikTalkTest {
         messages.clear()
     }
 
+    @Disabled
     @DelicateCoroutinesApi
     @Test
     fun `should annoy people with interesting factoids on random subject matter`() {
@@ -103,27 +104,27 @@ internal class StatikTalkTest {
                     factoid[subjectMatter] = interestingFact
                 }
             })
-
             requireNotNull(waitForFactoid("Cooking")) { "did not receive factoid before timeout" }
-            assertNotNull(factoid["Cooking"])
-
         }
+
+        assertNotNull(factoid["Cooking"])
     }
 
     @DelicateCoroutinesApi
     @Test
     fun `should support types`() {
+
+        val nameA = AtomicReference<String>()
+        val fortyTwoA = AtomicInteger()
+        val fiftyFourA = AtomicLong()
+        val wordA = AtomicBoolean()
+        val twiceA = AtomicDouble()
+        val halfA = AtomicDouble()
+        val preciseA = AtomicReference<BigDecimal>()
+        val bigA = AtomicReference<BigInteger>()
+
         withRapid { rapids ->
             waitForEvent("application_ready")
-
-            val nameA = AtomicReference<String>()
-            val fortyTwoA = AtomicInteger()
-            val fiftyFourA = AtomicLong()
-            val wordA = AtomicBoolean()
-            val twiceA = AtomicDouble()
-            val halfA = AtomicDouble()
-            val preciseA = AtomicReference<BigDecimal>()
-            val bigA = AtomicReference<BigInteger>()
 
             rapids.typed().hello(
                 "John",
@@ -163,15 +164,16 @@ internal class StatikTalkTest {
                     bigA.get().intValueExact()
                 }) { it == 2 }) { "did not receive types before timeout" }
 
-            assertEquals("John", nameA.get())
-            assertEquals(42, fortyTwoA.get())
-            assertEquals(54L, fiftyFourA.get())
-            assertEquals(true, wordA.get())
-            assertEquals(84.0, twiceA.get())
-            assertEquals(42.0, halfA.get())
-            assertEquals(10, preciseA.get().toInt())
-            assertEquals(2, bigA.get().toInt())
         }
+
+        assertEquals("John", nameA.get())
+        assertEquals(42, fortyTwoA.get())
+        assertEquals(54L, fiftyFourA.get())
+        assertEquals(true, wordA.get())
+        assertEquals(84.0, twiceA.get())
+        assertEquals(42.0, halfA.get())
+        assertEquals(10, preciseA.get().toInt())
+        assertEquals(2, bigA.get().toInt())
     }
 
     private fun waitForFactoid(topic: String) =

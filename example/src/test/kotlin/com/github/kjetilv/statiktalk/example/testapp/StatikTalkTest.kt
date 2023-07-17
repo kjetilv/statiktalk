@@ -6,7 +6,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.kjetilv.statiktalk.api.Context
 import com.github.kjetilv.statiktalk.example.testapp.microservices.*
-import com.github.kjetilv.statiktalk.example.testapp.microservices.User
 import com.github.kjetilv.statiktalk.example.testapp.shared.generated.*
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
@@ -78,26 +77,40 @@ internal class StatikTalkTest {
             waitForEvent("application_ready")
             waitForEvent("application_up")
 
-            val statusMap = mapOf("foo42" to "elite")
+            val sessionService = rapids.sessions()
+
             val authorizedUsers = mapOf("foo42" to "123")
-            val returningUsers = setOf("foo42")
-
-            val memorySessions = MemorySessions()
-
-            rapids.handleSessions(
-                SessionsService(memorySessions)
-            )
-            rapids.handleLoginAttempt(
-                LoginAttemptService(rapids.authorization()) { Instant.EPOCH }
-            )
             rapids.handleAuthorization(
-                AuthorizationService(rapids.sessions(), authorizedUsers)
+                AuthorizationService(
+                    sessionService,
+                    authorizedUsers
+                )
             )
+
+            val statusMap = mapOf("foo42" to "elite")
             rapids.handleStatusCustomer(
-                StatusCustomerService(statusMap, rapids.sessions())
+                StatusCustomerService(
+                    sessionService,
+                    statusMap
+                )
             )
+
+            val returningUsers = setOf("foo42")
             rapids.handleReturningCustomer(
-                ReturningCustomerService(returningUsers, rapids.sessions())
+                ReturningCustomerService(
+                    sessionService,
+                    returningUsers
+                )
+            )
+
+            val sessionDb = MemorySessionDb()
+            rapids.handleSessions(
+                SessionsService(sessionDb)
+            )
+
+            val authorizationService = rapids.authorization()
+            rapids.handleLoginAttempt(
+                LoginAttemptService(authorizationService) { Instant.EPOCH }
             )
 
             rapids.loginAttempt().loginAttempted("foo42", Context.DUMMY)
@@ -105,7 +118,7 @@ internal class StatikTalkTest {
             await("wait until settled")
                 .atMost(10, SECONDS)
                 .until {
-                    memorySessions.sessions().firstOrNull()?.let {
+                    sessionDb.sessions().firstOrNull()?.let {
                         it == User(
                             userId = "foo42",
                             userKey = "123",
