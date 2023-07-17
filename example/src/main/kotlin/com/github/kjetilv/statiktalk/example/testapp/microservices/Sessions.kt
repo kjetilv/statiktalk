@@ -13,10 +13,17 @@ interface Sessions {
     )
 
     @Message(requireEventName = true)
-    fun userChange(
+    fun userIsReturning(
         userId: String,
         userKey: String,
         returning: String? = null,
+        ctx: Context? = null
+    )
+
+    @Message(requireEventName = true)
+    fun userHasStatus(
+        userId: String,
+        userKey: String,
         status: String? = null,
         ctx: Context? = null
     )

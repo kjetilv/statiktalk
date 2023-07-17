@@ -9,7 +9,7 @@ class ReturningCustomerService(
 
     override fun returning(userId: String, userKey: String) {
         if (knownCustomers.contains(userId)) {
-            sessions.userChange(userId, userKey, "true")
+            sessions.userIsReturning(userId, userKey, "true")
         }
     }
 }

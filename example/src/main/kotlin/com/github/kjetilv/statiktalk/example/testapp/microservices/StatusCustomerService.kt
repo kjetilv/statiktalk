@@ -9,7 +9,7 @@ class StatusCustomerService(
 
     override fun status(userId: String, userKey: String) {
         statii[userId]?.also {
-            sessions.userChange(userId = userId, userKey = userKey, status = it)
+            sessions.userHasStatus(userId, userKey, it)
         }
     }
 }

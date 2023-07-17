@@ -5,6 +5,12 @@ import no.nav.helse.rapids_rivers.MessageContext
 import java.math.BigDecimal
 
 interface Context {
+    object DUMMY : Context {
+        override val packet: JsonMessage
+            get() = throw IllegalStateException("Dummy context")
+        override val context: MessageContext
+            get() = throw IllegalStateException("Dummy context")
+    }
 
     val packet: JsonMessage
 

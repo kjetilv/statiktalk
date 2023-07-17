@@ -8,7 +8,11 @@ class SessionsService(private val memorySessions: MemorySessions) : Sessions {
         memorySessions.loggedIn(User(userId, userKey))
     }
 
-    override fun userChange(userId: String, userKey: String, returning: String?, status: String?, ctx: Context?) {
-        memorySessions.userChange(User(userId, userKey, status, returning == "true"))
+    override fun userIsReturning(userId: String, userKey: String, returning: String?, ctx: Context?) {
+        memorySessions.userChange(User(userId, userKey, status = null, returning == "true"))
+    }
+
+    override fun userHasStatus(userId: String, userKey: String, status: String?, ctx: Context?) {
+        memorySessions.userChange(User(userId, userKey, status))
     }
 }

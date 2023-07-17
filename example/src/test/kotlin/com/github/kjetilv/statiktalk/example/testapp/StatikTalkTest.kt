@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.github.kjetilv.statiktalk.api.Context
 import com.github.kjetilv.statiktalk.example.testapp.microservices.*
 import com.github.kjetilv.statiktalk.example.testapp.microservices.generated.handleSessions
 import com.github.kjetilv.statiktalk.example.testapp.microservices.generated.sessions
@@ -87,12 +88,11 @@ internal class StatikTalkTest {
             rapids.handleSessions(
                 SessionsService(memorySessions)
             )
-
-            rapids.handleUserLoggedIn(
-                UserLoggedInService(rapids.authorizedUserLoggedIn()) { Instant.EPOCH }
+            rapids.handleLoginAttempt(
+                LoginAttemptService(rapids.authorization()) { Instant.EPOCH }
             )
-            rapids.handleAuthorizedUserLoggedIn(
-                AuthorizedUserLoggedInService(rapids.sessions(), authorizedUsers)
+            rapids.handleAuthorization(
+                AuthorizationService(rapids.sessions(), authorizedUsers)
             )
             rapids.handleStatusCustomer(
                 StatusCustomerService(statusMap, rapids.sessions())
@@ -101,7 +101,7 @@ internal class StatikTalkTest {
                 ReturningCustomerService(returningUsers, rapids.sessions())
             )
 
-            rapids.userLoggedIn().loggedIn("foo42")
+            rapids.loginAttempt().loginAttempted("foo42", Context.DUMMY)
 
             await("wait until settled")
                 .atMost(10, SECONDS)
