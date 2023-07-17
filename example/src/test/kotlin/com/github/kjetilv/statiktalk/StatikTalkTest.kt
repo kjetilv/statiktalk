@@ -93,7 +93,11 @@ internal class StatikTalkTest {
         withRapid { rapids ->
             waitForEvent("application_ready")
 
-            rapids.factoids().annoyWith("Cooking", "Heat the oil first", aside = "One more thing")
+            rapids.factoids().annoyWith(
+                "Static typing",
+                "It's recommended by 9 out of 10 dentists",
+                aside = "Prevents gnashing of the teeth you see"
+            )
 
             rapids.handleFactoids(object : Factoids {
 
@@ -108,11 +112,11 @@ internal class StatikTalkTest {
                 }
             })
 
-            requireNotNull(waitForFactoid("Cooking")) { "did not receive factoid before timeout" }
+            requireNotNull(waitForFactoid("Static typing")) { "did not receive factoid before timeout" }
         }
 
-        assertEquals("One more thing", asideAtomic.get())
-        assertNotNull(factoid["Cooking"])
+        assertEquals("Prevents gnashing of the teeth you see", asideAtomic.get())
+        assertNotNull(factoid["Static typing"])
     }
 
     @DelicateCoroutinesApi

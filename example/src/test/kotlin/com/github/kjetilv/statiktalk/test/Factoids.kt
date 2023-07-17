@@ -5,7 +5,7 @@ import com.github.kjetilv.statiktalk.api.Message
 
 interface Factoids {
 
-    @Message(fullEventName = true)
+    @Message(eventName = "factoids'r'us")
     fun annoyWith(
         subjectMatter: String,
         interestingFact: String,
