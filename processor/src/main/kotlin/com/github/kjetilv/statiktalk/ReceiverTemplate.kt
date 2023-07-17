@@ -65,7 +65,7 @@ private class 〔s.service〕ReceiveMediator〔m.upcasedServiceName〕(
         〔endif〕
         listen(
             connection, 
-            〔if(m.requireEventName)〕"〔s.service〕_〔m.serviceName〕"〔else〕null〔endif〕, 
+            〔if(m.eventName)〕"〔m.eventName〕"〔else〕null〔endif〕, 
             requiredKeys,
             〔if(m.hasAdditionalKeys)〕
             listOf(〔m.additionalKeys:{additionalKey|"〔additionalKey〕", }〕),

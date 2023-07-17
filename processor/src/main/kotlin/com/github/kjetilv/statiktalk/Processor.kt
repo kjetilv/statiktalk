@@ -44,9 +44,9 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             .mapKeys { (key, _) ->
                 ksService(key)
             }
-            .mapValues { (_, functionDeclarations) ->
+            .mapValues { (service, functionDeclarations) ->
                 functionDeclarations.map { functionDeclaration ->
-                    message(functionDeclaration, contextType)
+                    message(service, functionDeclaration, contextType)
                 }
             }
 
@@ -68,6 +68,7 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
     )
 
     private fun message(
+        service: KService,
         functionDeclaration: KSFunctionDeclaration,
         contextType: KSName
     ): KMessage {
@@ -88,17 +89,31 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
                     it.type.resolve().isMarkedNullable
                 )
             }
-        val requireEventName = anno.arguments
-            .first { it.name?.asString() == "requireEventName" }
+        val fullEventName = anno.arguments
+            .first { it.name?.asString() == "fullEventName" }
             .let { it.value as? Boolean }
             ?: false
+        val simpleEventName = anno.arguments
+            .first { it.name?.asString() == "simpleEventName" }
+            .let { it.value as? Boolean }
+            ?: false
+        val eventName = anno.arguments
+            .firstOrNull { it.name?.asString() == "eventName" }
+            ?.value
+            ?.toString()
+            ?.takeUnless { it.isBlank() }
         val additionalKeys = anno.arguments
             .first { it.name?.asString() == "additionalKeys" }
             .let { it.value as List<*> }
             .map { it.toString() }
+        val serviceName = functionDeclaration.simpleName.asString()
         return KMessage(
-            functionDeclaration.simpleName.asString(),
-            requireEventName,
+            serviceName,
+            eventName ?: (
+                    if (fullEventName) "${service.service}_${serviceName}"
+                    else if (simpleEventName) serviceName
+                    else null
+                    ),
             keys,
             additionalKeys,
             contextual,

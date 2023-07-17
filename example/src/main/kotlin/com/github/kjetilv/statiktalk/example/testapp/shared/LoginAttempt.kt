@@ -5,6 +5,6 @@ import com.github.kjetilv.statiktalk.api.Message
 
 interface LoginAttempt {
 
-    @Message(requireEventName = true)
+    @Message(eventName = "userLogin")
     fun loginAttempted(userId: String, context: Context = Context.DUMMY)
 }

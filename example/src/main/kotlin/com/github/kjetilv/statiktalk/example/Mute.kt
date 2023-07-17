@@ -5,6 +5,6 @@ import com.github.kjetilv.statiktalk.api.Message
 
 interface Mute {
 
-    @Message(requireEventName = true)
+    @Message
     fun shtum(context: Context? = null)
 }

@@ -22,8 +22,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.config.SaslConfigs
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.*
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.shaded.com.google.common.util.concurrent.AtomicDouble
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
@@ -89,12 +88,15 @@ internal class StatikTalkTest {
     @DelicateCoroutinesApi
     @Test
     fun `should annoy people with interesting factoids on random subject matter`() {
+        val asideAtomic = AtomicReference<String>()
+
         withRapid { rapids ->
             waitForEvent("application_ready")
 
-            rapids.factoids().annoyWith("Cooking", "Heat the oil first")
+            rapids.factoids().annoyWith("Cooking", "Heat the oil first", aside = "One more thing")
 
             rapids.handleFactoids(object : Factoids {
+
                 override fun annoyWith(
                     subjectMatter: String,
                     interestingFact: String,
@@ -102,11 +104,14 @@ internal class StatikTalkTest {
                     context: Context?
                 ) {
                     factoid[subjectMatter] = interestingFact
+                    aside?.also(asideAtomic::set)
                 }
             })
+
             requireNotNull(waitForFactoid("Cooking")) { "did not receive factoid before timeout" }
         }
 
+        assertEquals("One more thing", asideAtomic.get())
         assertNotNull(factoid["Cooking"])
     }
 

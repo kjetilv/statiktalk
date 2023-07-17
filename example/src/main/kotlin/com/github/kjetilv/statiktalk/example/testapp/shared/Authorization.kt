@@ -5,6 +5,6 @@ import com.github.kjetilv.statiktalk.api.Message
 
 interface Authorization {
 
-    @Message(requireEventName = true)
+    @Message(eventName = "userAuthorization")
     fun userLoggedIn(userId: String, context: Context)
 }

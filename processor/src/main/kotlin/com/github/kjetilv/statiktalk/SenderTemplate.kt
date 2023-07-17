@@ -46,7 +46,7 @@ private class 〔s.service〕SendMediator(
     ) {
         send〔if(m.contextualNullable)〕0〔else〕1〔endif〕(
             〔if(m.contextual)〕context〔else〕null〔endif〕,
-            "@event_name" to "〔s.service〕_〔m.serviceName〕",
+            〔if(m.eventName)〕"@event_name" to "〔m.eventName〕",〔endif〕
 〔m.keys:{key|
             "〔key.name〕" to 〔key.name〕,
             }〕)
