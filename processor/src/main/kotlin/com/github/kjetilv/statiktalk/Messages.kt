@@ -17,7 +17,7 @@ internal fun functionMap(resolver: Resolver, contextType: KSName) =
                 kService(classDeclaration)
             }
             .mapValues { (service, functionDeclarations) ->
-                functionDeclarations.map {
+                verified(functionDeclarations).map {
                     kMessage(service, verified(service, it), contextType)
                 }
             }
@@ -68,12 +68,23 @@ private fun KSAnnotation.resolveEventName(service: KService, serviceName: String
         else -> null
     }
 
+private fun verified(decls: List<KSFunctionDeclaration>): List<KSFunctionDeclaration> =
+    decls.apply {
+        groupBy { it.simpleName.asString() }
+            .filterValues { it.size > 1 }
+            .takeIf { it.isNotEmpty() }
+            ?.keys
+            ?.also {
+                throw IllegalStateException("Overloaded functions are not supported: ${it.joinToString(", ")}")
+            }
+    }
+
 private fun verified(service: KService, decl: KSFunctionDeclaration) =
-    decl.also {
-        if (it.returnType != null && it.returnType?.toString() != "Unit") {
+    decl.apply {
+        if (returnType != null && returnType?.toString() != "Unit") {
             throw IllegalStateException(
                 "Message methods must return ${Unit::class.java.simpleName}:" +
-                        " ${service.qualifiedService}#${it.simpleName.asString()} returned ${it.returnType?.element}"
+                        " ${service.qualifiedService}#${simpleName.asString()} returned ${returnType?.element}"
             )
         }
     }
