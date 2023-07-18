@@ -138,7 +138,7 @@ Here is the receiver:
 ```kotlin
 @Suppress("unused")
 fun RapidsConnection.handleFactoids(
-    factoids: Factoids, 
+    factoids: Factoids,
     vararg additionalKeys: String
 ) {
     FactoidsReceiveMediatorAnnoyWith(factoids)
@@ -155,22 +155,25 @@ private class FactoidsReceiveMediatorAnnoyWith(
     override fun listenTo(connection: RapidsConnection, additionalKeys: List<String>) {
         val requiredKeys = listOf(
             "subjectMatter",
-            "interestingFact")
+            "interestingFact"
+        )
         val interestingKeys = listOf(
-            "aside")
+            "aside"
+        )
         listen(
-            connection, 
-            "factoids'r'us", 
+            connection,
+            "factoids'r'us",
             requiredKeys,
             interestingKeys,
-            additionalKeys)
+            additionalKeys
+        )
     }
 
-    @Suppress("RedundantNullableReturnType")
-override fun onPacket(packet: JsonMessage, context: MessageContext) {
+    @Suppress("RedundantNullableReturnType", "RedundantSuppression")
+    override fun onPacket(packet: JsonMessage, context: MessageContext) {
         val subjectMatter: String = packet["subjectMatter"].textValue()
         val interestingFact: String = packet["interestingFact"].textValue()
- 
+
         val aside: String? = packet["aside"].textValue()
 
         factoids.annoyWith(subjectMatter, interestingFact, aside, context(packet, context))
