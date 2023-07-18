@@ -19,11 +19,10 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             }
         }
 
-    private fun Resolver.writeFiles(contextType: KSName) {
+    private fun Resolver.writeFiles(contextType: KSName) =
         functionMap(this, contextType).forEach { (service, messages) ->
             writeFiles(service, messages)
         }
-    }
 
     private fun writeFiles(service: KService, messages: List<KMessage>) {
         with(writer(service, "${service.service}SenderMediator")) {
