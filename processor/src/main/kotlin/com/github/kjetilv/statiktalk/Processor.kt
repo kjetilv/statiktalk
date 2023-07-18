@@ -3,52 +3,42 @@ package com.github.kjetilv.statiktalk
 import com.github.kjetilv.statiktalk.api.Message
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
-import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.*
-import org.stringtemplate.v4.ST
 import java.io.PrintWriter
-import java.math.BigDecimal
-import java.math.BigInteger
 
 class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
     override fun process(resolver: Resolver) = emptyList<KSAnnotated>().also {
         contextType(resolver).let { contextType ->
             functionMap(resolver, contextType).forEach { (service, messages) ->
-                with(
-                    writer(
-                        service,
-                        "${service.service}SenderMediator"
-                    )
-                ) {
-                    println(source(service, messages, senderTemplate))
+                with(writer(service, "${service.service}SenderMediator")) {
+                    println(senderTemplate.generateSource(service, messages))
                 }
-                with(
-                    writer(
-                        service,
-                        "${service.service}ReceiverMediator"
-                    )
-                ) {
-                    println(source(service, messages, receiverTemplate))
+                with(writer(service, "${service.service}ReceiverMediator")) {
+                    println(receiverTemplate.generateSource(service, messages))
                 }
             }
         }
     }
 
     private fun functionMap(resolver: Resolver, contextType: KSName) =
-        resolver.getSymbolsWithAnnotation(Message::class.java.name)
-            .mapNotNull { it as? KSFunctionDeclaration }
-            .groupBy { declaringClass(it) }
-            .mapKeys { (key, _) ->
-                ksService(key)
-            }
-            .mapValues { (service, functionDeclarations) ->
-                functionDeclarations.map { functionDeclaration ->
-                    message(service, functionDeclaration, contextType)
+        try {
+            resolver.getSymbolsWithAnnotation(ANNOTATION_NAME)
+                .mapNotNull { it as? KSFunctionDeclaration }
+                .groupBy { declaringClass(it) }
+                .mapKeys { (classDeclaration, _) ->
+                    kService(classDeclaration)
                 }
-            }
+                .mapValues { (service, functionDeclarations) ->
+                    functionDeclarations.map {
+                        kMessage(service, verified(service, it), contextType)
+                    }
+                }
+        } catch (e: Exception) {
+            throw IllegalStateException("Failed to process messages", e)
+        }
 
     private fun declaringClass(ksFunctionDeclaration: KSFunctionDeclaration) =
         (ksFunctionDeclaration.parentDeclaration as? KSClassDeclaration)?.takeIf {
@@ -60,48 +50,36 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             ?.qualifiedName
             ?: throw IllegalStateException("Could not resolve context type")
 
-    private fun ksService(classDeclaration: KSClassDeclaration) = KService(
+    private fun kService(classDeclaration: KSClassDeclaration) = KService(
         classDeclaration.packageName.asString(),
         "${classDeclaration.packageName.asString()}.generated",
         classDeclaration.simpleName.asString(),
         classDeclaration.containingFile
     )
 
-    private fun message(
-        service: KService,
-        functionDeclaration: KSFunctionDeclaration,
-        contextType: KSName
-    ): KMessage {
-        val anno = functionDeclaration.annotations.first { annotation ->
-            annotation.shortName.asString() == "Message"
-        }
-        val valueParameters = functionDeclaration.parameters
+    private fun kMessage(service: KService, decl: KSFunctionDeclaration, contextType: KSName): KMessage {
+        val anno = decl.findAnno(ANNOTATION_SHORT_NAME)
+        val valueParameters = decl.parameters
         val lastParam = valueParameters.lastOrNull()?.type
         val contextual = lastParam?.toString() == contextType.getShortName()
         val contextNullable = !contextual || (lastParam?.resolve()?.isMarkedNullable ?: false)
         val keys = valueParameters
             .let { if (contextual) it.dropLast(1) else it }
             .map(::kParam)
-        return functionDeclaration.simpleName.asString().let { serviceName ->
-            val eventName =
-                anno.stringField("eventName") ?: anno.resolveEventName(service, serviceName)
-            KMessage(
-                serviceName,
-                eventName,
-                keys,
-                anno.stringsField("additionalKeys"),
-                contextual,
-                contextNullable
-            )
-        }
+        val serviceName = decl.simpleName.asString()
+        val eventName = anno.stringField("eventName") ?: anno.resolveEventName(service, serviceName)
+        val additionalKeys = anno.stringsField("additionalKeys")
+        return KMessage(serviceName, eventName, keys, additionalKeys, contextual, contextNullable)
     }
 
     private fun kParam(par: KSValueParameter) =
-        KParam(
-            par.name?.asString() ?: throw IllegalStateException("Null name: $par"),
-            par.type.element.toString(),
-            par.type.resolve().isMarkedNullable
-        )
+        par.type.resolve().let { ksType ->
+            KParam(
+                par.name?.asString() ?: throw IllegalStateException("Null name: $par"),
+                par.type.element.toString(),
+                ksType.isMarkedNullable
+            )
+        }
 
     private fun KSAnnotation.resolveEventName(service: KService, serviceName: String) =
         when {
@@ -110,76 +88,20 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             else -> null
         }
 
-    private fun KSAnnotation.stringField(name: String) = field(name)?.toString()?.takeUnless { it.isBlank() }
-
-    private fun KSAnnotation.stringsField(name: String) = field(name).let { it as List<*> }.map { it.toString() }
-
-    private fun KSAnnotation.boolField(name: String) = field(name)?.let { it as? Boolean } ?: false
-
-    private fun KSAnnotation.field(name: String) = arguments.firstOrNull() { it.name?.asString() == name }?.value
+    private fun verified(service: KService, decl: KSFunctionDeclaration) =
+        decl.also {
+            if (it.returnType != null && it.returnType?.toString() != "Unit") {
+                throw IllegalStateException(
+                    "Message methods must return ${Unit::class.java.simpleName}:" +
+                            " ${service.qualifiedService}#${it.simpleName.asString()} returned ${it.returnType?.element}"
+                )
+            }
+        }
 
     private fun writer(service: KService, className: String) =
         PrintWriter(codeGenerator.mediatorClassFile(service, className), true)
-
-    private fun source(service: KService, messages: List<KMessage>, template: String) =
-        try {
-            val imports = imports(messages)
-            ST(template, '《', '》').apply {
-                add("s", service)
-                add("ms", messages)
-                add("debug", true)
-                add("imports", imports)
-            }.render().replace(TRAILING, ")").trim()
-        } catch (e: Exception) {
-            throw IllegalStateException(
-                "Failed to render ${messages.size} messages with $template", e
-            )
-        }
-
-    private fun imports(messages: List<KMessage>): List<String> =
-        messages.flatMap { message ->
-            message.keys.map { key ->
-                key.type
-            }
-        }.distinct()
-            .let { types ->
-                explicit(types) + implicit(
-                    types,
-                    BigDecimal::class.java,
-                    BigInteger::class.java
-                ) + jsonNode(messages)
-            }
-
-    private fun explicit(types: List<String>) =
-        types.filter { type ->
-            type.startsWith("java") || type.startsWith("kotlin")
-        }
-
-    private fun implicit(types: List<String>, vararg implicits: Class<*>) =
-        implicits.flatMap { implicit ->
-            if (types.contains(implicit.simpleName))
-                listOf(implicit.name)
-            else
-                emptyList()
-        }
-
-    private fun jsonNode(messages: List<KMessage>): List<String> =
-        if (messages.any { it.hasKeys }) {
-            listOf("com.fasterxml.jackson.databind.JsonNode")
-        } else {
-            emptyList()
-        }
 }
 
+private val ANNOTATION_NAME = Message::class.java.name
 
-private fun CodeGenerator.mediatorClassFile(decl: KService, className: String) =
-    createNewFile(
-        decl.containingFile
-            ?.let { Dependencies(true, it) }
-            ?: Dependencies(true),
-        decl.packidge,
-        className,
-        "kt"
-    )
-
-private val TRAILING = ",\\s+\\)".toRegex()
+private val ANNOTATION_SHORT_NAME = Message::class.java.simpleName

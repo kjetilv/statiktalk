@@ -10,5 +10,7 @@ data class KService(
     val containingFile: KSFile?
 ) {
 
+    val qualifiedService: String get() = "${packidge}.${service}"
+
     val serviceCc = service.substring(0, 1).lowercase() + service.substring(1)
 }

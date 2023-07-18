@@ -28,7 +28,7 @@ import java.time.Instant
 import java.util.concurrent.TimeUnit.SECONDS
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-internal class StatikTalkTest {
+internal class SimpleAppTest {
 
     private val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
