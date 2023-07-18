@@ -96,7 +96,7 @@ internal class StatikTalkTest {
             rapids.factoids().annoyWith(
                 "Static typing",
                 "It's recommended by 9 out of 10 dentists",
-                aside = "Prevents gnashing of the teeth you see"
+                aside = "Less gnashing of the teeth you see"
             )
 
             rapids.handleFactoids(object : Factoids {
@@ -115,7 +115,7 @@ internal class StatikTalkTest {
             requireNotNull(waitForFactoid("Static typing")) { "did not receive factoid before timeout" }
         }
 
-        assertEquals("Prevents gnashing of the teeth you see", asideAtomic.get())
+        assertEquals("Less gnashing of the teeth you see", asideAtomic.get())
         assertNotNull(factoid["Static typing"])
     }
 

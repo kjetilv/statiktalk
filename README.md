@@ -61,11 +61,11 @@ To send them:
     rapids.factoids().annoyWith(
       "Static typing", 
       "It's recommended by 9 out of 10 dentists", 
-      aside = "Prevents gnashing of the teeth you see"
+      aside = "Less gnashing of the teeth you see"
     )
 ```
 
-The `@Message` annotation adds extension metohds to `RapidsConnection` that will
+The `@Message` annotation adds extension functions to `RapidsConnection` that will
 setup listeners and send messages.
 
 The message sent was:
@@ -75,7 +75,7 @@ The message sent was:
   "@event_name": "factoids'r'us",
   "subjectMatter": "Static typing",
   "interestingFact": "It's recommended by 9 out of 10 dentists",
-  "aside": "Prevents gnashing of the teeth you see",
+  "aside": "Less gnashing of the teeth you see",
   "@id": "ac8a2ab7-8568-4d94-a9d7-19f76b8e0db2",
   "@opprettet": "2023-07-17T21:35:23.722431",
   "system_read_count": 0,
