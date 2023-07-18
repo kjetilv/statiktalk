@@ -11,7 +11,7 @@ class AuthorizationService(
 
     override fun userLoggedIn(userId: String, context: Context) {
         authorized[userId]?.also { key ->
-            sessions.loggedIn(userId, key, context)
+            sessions.loggedIn(userId, key, context = context)
         }
     }
 }

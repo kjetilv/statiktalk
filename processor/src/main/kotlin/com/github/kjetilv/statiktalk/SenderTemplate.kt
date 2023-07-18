@@ -41,11 +41,11 @@ private class 《s.service》SendMediator(
 《m.keys:{key|
         《key.name》: 《key.type》《if(key.optional)》?《endif》,
         }》《if(m.contextual)
-        》        context: 《m.contextClass》《if(m.contextualNullable)》?《else》《endif》
+        》        《m.contextArg》: 《m.contextClass》《if(m.contextualNullable)》?《else》《endif》
         《else》《endif》
     ) {
         send《if(m.contextualNullable)》0《else》1《endif》(
-            《if(m.contextual)》context《else》null《endif》,
+            《if(m.contextual)》《m.contextArg》《else》null《endif》,
             《if(m.eventName)》"@event_name" to "《m.eventName》",《endif》
 《m.keys:{key|
             "《key.name》" to 《key.name》,

@@ -8,9 +8,11 @@ internal data class KMessage(
     val eventName: String?,
     val keys: List<KParam>,
     val additionalKeys: List<String>,
-    val contextual: Boolean,
+    val contextArg: String?,
     val contextualNullable: Boolean
 ) {
+
+    val contextual = contextArg != null
 
     val hasKeys: Boolean = keys.isNotEmpty()
 

@@ -41,17 +41,27 @@ private fun kService(decl: KSClassDeclaration) =
 private fun kMessage(service: KService, decl: KSFunctionDeclaration, contextType: KSName): KMessage {
     val anno = decl.findAnno(ANNOTATION_SHORT_NAME)
     val valueParameters = decl.parameters
-    val lastParam = valueParameters.lastOrNull()?.type
-    val contextual = lastParam?.toString() == contextType.getShortName()
-    val contextNullable = !contextual || (lastParam?.resolve()?.isMarkedNullable ?: false)
-    val keys = valueParameters
-        .let { if (contextual) it.dropLast(1) else it }
-        .map(::kParam)
+    val lastParam = valueParameters.lastOrNull()
+    val contextArg = if (isContextArg(lastParam, contextType)) lastParam?.name?.asString() else null
+    val contextNullable = contextArg == null || (lastParam?.type?.resolve()?.isMarkedNullable ?: false)
+
     val serviceName = decl.simpleName.asString()
     val eventName = anno.stringField("eventName") ?: anno.resolveEventName(service, serviceName)
+    val keys = valueParameters
+        .let { if (contextArg != null) it.dropLast(1) else it }
+        .map(::kParam)
     val additionalKeys = anno.stringsField("additionalKeys")
-    return KMessage(serviceName, eventName, keys, additionalKeys, contextual, contextNullable)
+
+    return KMessage(serviceName, eventName, keys, additionalKeys, contextArg, contextNullable)
 }
+
+private fun isContextArg(
+    lastParam: KSValueParameter?,
+    contextType: KSName
+) =
+    lastParam?.type?.toString()
+        ?.let { it == contextType.getShortName() || it == contextType.asString() }
+        ?: false
 
 private fun kParam(par: KSValueParameter) =
     par.type.resolve().let { ksType ->

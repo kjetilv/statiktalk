@@ -9,7 +9,8 @@ interface Sessions {
     fun loggedIn(
         userId: String,
         userKey: String,
-        ctx: Context? = null
+        loginTime: String? = null,
+        context: Context
     )
 
     @Message(simpleEventName = true)
@@ -17,7 +18,6 @@ interface Sessions {
         userId: String,
         userKey: String,
         returning: Boolean,
-        ctx: Context? = null
     )
 
     @Message(simpleEventName = true)
@@ -25,6 +25,5 @@ interface Sessions {
         userId: String,
         userKey: String,
         status: String,
-        ctx: Context? = null
     )
 }
