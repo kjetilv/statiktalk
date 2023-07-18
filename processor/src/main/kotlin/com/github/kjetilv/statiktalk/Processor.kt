@@ -12,12 +12,11 @@ import java.util.concurrent.atomic.AtomicReference
 
 class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
-    override fun process(resolver: Resolver) =
-        emptyList<KSAnnotated>().also {
-            contextType(resolver).let { contextType ->
-                resolver.writeFiles(contextType)
-            }
+    override fun process(resolver: Resolver) = emptyList<KSAnnotated>().also {
+        contextType(resolver).let { contextType ->
+            resolver.writeFiles(contextType)
         }
+    }
 
     private fun Resolver.writeFiles(contextType: KSName) =
         functionMap(this, contextType).forEach { (service, messages) ->
