@@ -82,26 +82,17 @@ internal class SimpleAppTest {
 
             val authorizedUsers = mapOf("foo42" to "123")
             rapids.handleAuthorization(
-                AuthorizationService(
-                    sessionService,
-                    authorizedUsers
-                )
+                AuthorizationService(sessionService, authorizedUsers)
             )
 
             val statusMap = mapOf("foo42" to "elite")
-            rapids.handleStatusCustomer(
-                StatusCustomerService(
-                    sessionService,
-                    statusMap
-                )
+            rapids.handleAuthorizedUserEnricher(
+                StatusCustomerService(sessionService, statusMap)
             )
 
             val returningUsers = setOf("foo42")
-            rapids.handleReturningCustomer(
-                ReturningCustomerService(
-                    sessionService,
-                    returningUsers
-                )
+            rapids.handleAuthorizedUserEnricher(
+                ReturningCustomerService(sessionService, returningUsers)
             )
 
             val sessionDb = MemorySessionDb()

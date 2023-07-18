@@ -2,8 +2,8 @@ package com.github.kjetilv.statiktalk.example.testapp.shared
 
 import com.github.kjetilv.statiktalk.api.Message
 
-interface ReturningCustomer {
+interface AuthorizedUserEnricher {
 
     @Message
-    fun returning(userId: String, userKey: String)
+    fun authorized(userId: String, userKey: String)
 }
