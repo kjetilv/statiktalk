@@ -4,7 +4,7 @@ import org.stringtemplate.v4.ST
 import java.math.BigDecimal
 import java.math.BigInteger
 
-internal fun String.generateSource(service: KService, messages: List<KMessage>) =
+internal fun String.source(service: KService, messages: List<KMessage>) =
     try {
         val imports = imports(messages)
         ST(this, '《', '》').apply {
