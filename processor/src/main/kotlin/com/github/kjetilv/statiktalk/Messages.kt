@@ -25,17 +25,18 @@ internal fun functionMap(resolver: Resolver, contextType: KSName) =
         throw IllegalStateException("Failed to process messages", e)
     }
 
-private fun declaringClass(ksFunctionDeclaration: KSFunctionDeclaration) =
-    (ksFunctionDeclaration.parentDeclaration as? KSClassDeclaration)?.takeIf {
+private fun declaringClass(decl: KSFunctionDeclaration) =
+    (decl.parentDeclaration as? KSClassDeclaration)?.takeIf {
         it.classKind == ClassKind.INTERFACE
-    } ?: throw IllegalStateException("An interface is needed to hold $ksFunctionDeclaration")
+    } ?: throw IllegalStateException("An interface is needed to hold $decl")
 
-private fun kService(classDeclaration: KSClassDeclaration) = KService(
-    classDeclaration.packageName.asString(),
-    "${classDeclaration.packageName.asString()}.generated",
-    classDeclaration.simpleName.asString(),
-    classDeclaration.containingFile
-)
+private fun kService(decl: KSClassDeclaration) =
+    KService(
+        decl.packageName.asString(),
+        "${decl.packageName.asString()}.generated",
+        decl.simpleName.asString(),
+        decl.containingFile
+    )
 
 private fun kMessage(service: KService, decl: KSFunctionDeclaration, contextType: KSName): KMessage {
     val anno = decl.findAnno(ANNOTATION_SHORT_NAME)
@@ -68,7 +69,7 @@ private fun KSAnnotation.resolveEventName(service: KService, serviceName: String
         else -> null
     }
 
-private fun verified(decls: List<KSFunctionDeclaration>): List<KSFunctionDeclaration> =
+private fun verified(decls: List<KSFunctionDeclaration>) =
     decls.apply {
         groupBy { it.simpleName.asString() }
             .filterValues { it.size > 1 }
