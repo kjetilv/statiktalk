@@ -78,12 +78,18 @@ private class 《s.service》ReceiveMediator《m.upcasedServiceName》(
     @Suppress("RedundantNullableReturnType", "RedundantSuppression")
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
 《m.requiredKeys:{requiredKey|
-        val 《requiredKey.name》: 《requiredKey.type》 = packet["《requiredKey.name》"].《requiredKey.jsonType》()
+        val 《requiredKey.name》: 《requiredKey.type》 = 
+            packet.resolveRequired("《requiredKey.name》", JsonNode::《requiredKey.jsonType》)
 }》 
 《m.interestingKeys:{interestingKey|
-        val 《interestingKey.name》: 《interestingKey.type》? = packet["《interestingKey.name》"].《interestingKey.jsonType》()
+        val 《interestingKey.name》: 《interestingKey.type》? = 
+            packet.resolve("《interestingKey.name》", JsonNode::《interestingKey.jsonType》)
 }》
-        《s.serviceCc》.《m.serviceName》(《m.keys:{key|《key.name》, }》《if(m.contextual)》context(packet, context)《else》《endif》)
+        《s.serviceCc》.《m.serviceName》(
+《m.keys:{key|
+            《key.name》, 
+}》《if(m.contextual)》            context(packet, context)
+        《else》《endif》        )
     \}
 \}
 

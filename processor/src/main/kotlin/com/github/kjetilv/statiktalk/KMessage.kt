@@ -12,6 +12,8 @@ data class KMessage(
     val contextualNullable: Boolean
 ) {
 
+    val hasKeys: Boolean = keys.isNotEmpty()
+
     val contextClass: String = contextClassName
 
     val upcasedServiceName = serviceName.substring(0, 1).uppercase() + serviceName.substring(1)

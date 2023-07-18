@@ -1,5 +1,6 @@
 package com.github.kjetilv.statiktalk.api
 
+import com.fasterxml.jackson.databind.JsonNode
 import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.RapidsConnection
@@ -33,4 +34,12 @@ abstract class ReceiveMediatorBase : River.PacketListener {
 
     protected fun context(packet: JsonMessage, context: MessageContext) =
         DefaultContext(packet, context)
+
+    protected fun <T> JsonMessage.resolveRequired(name: String, resolver: (JsonNode) -> T): T =
+        resolve(name, resolver) ?: throw IllegalStateException("Not found in $this: $name")
+
+    protected fun <T> JsonMessage.resolve(name: String, resolver: (JsonNode) -> T): T? =
+        get(name).let { node ->
+            node.takeUnless { it.isNull }?.let(resolver)
+        }
 }

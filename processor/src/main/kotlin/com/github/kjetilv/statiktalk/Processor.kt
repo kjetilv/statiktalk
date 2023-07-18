@@ -144,19 +144,36 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
             message.keys.map { key ->
                 key.type
             }
-        }.distinct().let { types ->
-            explicit(types) + implicit(types, BigDecimal::class.java) + implicit(types, BigInteger::class.java)
+        }.distinct()
+            .let { types ->
+                explicit(types) + implicit(
+                    types,
+                    BigDecimal::class.java,
+                    BigInteger::class.java
+                ) + jsonNode(messages)
+            }
+
+    private fun explicit(types: List<String>) =
+        types.filter { type ->
+            type.startsWith("java") || type.startsWith("kotlin")
         }
 
-    private fun explicit(types: List<String>) = types.filter { type ->
-        type.startsWith("java") || type.startsWith("kotlin")
-    }
+    private fun implicit(types: List<String>, vararg implicits: Class<*>) =
+        implicits.flatMap { implicit ->
+            if (types.contains(implicit.simpleName))
+                listOf(implicit.name)
+            else
+                emptyList()
+        }
 
-    private fun implicit(
-        types: List<String>,
-        implicit: Class<*>
-    ) = (if (types.contains(implicit.simpleName)) listOf(implicit.name) else emptyList())
+    private fun jsonNode(messages: List<KMessage>): List<String> =
+        if (messages.any { it.hasKeys }) {
+            listOf("com.fasterxml.jackson.databind.JsonNode")
+        } else {
+            emptyList()
+        }
 }
+
 
 private fun CodeGenerator.mediatorClassFile(decl: KService, className: String) =
     createNewFile(
