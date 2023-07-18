@@ -3,7 +3,7 @@ package com.github.kjetilv.statiktalk
 import com.google.devtools.ksp.symbol.KSFile
 
 @Suppress("unused")
-data class KService(
+internal data class KService(
     val sourcePackidge: String,
     val packidge: String,
     val service: String,

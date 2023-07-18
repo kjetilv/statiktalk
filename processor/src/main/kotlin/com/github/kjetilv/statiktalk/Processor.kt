@@ -10,7 +10,7 @@ import com.google.devtools.ksp.symbol.KSName
 import java.io.PrintWriter
 import java.util.concurrent.atomic.AtomicReference
 
-class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
+internal class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
     override fun process(resolver: Resolver) = emptyList<KSAnnotated>().also {
         contextType(resolver).let { contextType ->

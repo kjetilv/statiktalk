@@ -3,7 +3,7 @@ package com.github.kjetilv.statiktalk
 import com.github.kjetilv.statiktalk.api.Context
 
 @Suppress("unused")
-data class KMessage(
+internal data class KMessage(
     val serviceName: String,
     val eventName: String?,
     val keys: List<KParam>,

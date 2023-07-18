@@ -1,7 +1,7 @@
 package com.github.kjetilv.statiktalk
 
 @Suppress("unused")
-data class KParam(val name: String, val type: String, val optional: Boolean = false) {
+internal data class KParam(val name: String, val type: String, val optional: Boolean = false) {
 
     val jsonType: String = when (type) {
         "String", "kotlin.String", "java.lang.String" -> "textValue"
