@@ -77,49 +77,46 @@ class Processor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
         }
         val valueParameters = functionDeclaration.parameters
         val lastParam = valueParameters.lastOrNull()?.type
-        val contextual = lastParam?.toString() == contextType
-            .getShortName()
-        val contextNullable =
-            !contextual || (lastParam?.resolve()?.isMarkedNullable ?: false)
-        val keys = valueParameters.let { if (contextual) it.dropLast(1) else it }
-            .map {
-                KParam(
-                    it.name?.asString() ?: throw IllegalStateException("Null name: $it"),
-                    it.type.element.toString(),
-                    it.type.resolve().isMarkedNullable
-                )
-            }
-        val fullEventName = anno.arguments
-            .first { it.name?.asString() == "fullEventName" }
-            .let { it.value as? Boolean }
-            ?: false
-        val simpleEventName = anno.arguments
-            .first { it.name?.asString() == "simpleEventName" }
-            .let { it.value as? Boolean }
-            ?: false
-        val eventName = anno.arguments
-            .firstOrNull { it.name?.asString() == "eventName" }
-            ?.value
-            ?.toString()
-            ?.takeUnless { it.isBlank() }
-        val additionalKeys = anno.arguments
-            .first { it.name?.asString() == "additionalKeys" }
-            .let { it.value as List<*> }
-            .map { it.toString() }
-        val serviceName = functionDeclaration.simpleName.asString()
-        return KMessage(
-            serviceName,
-            eventName ?: (
-                    if (fullEventName) "${service.service}_${serviceName}"
-                    else if (simpleEventName) serviceName
-                    else null
-                    ),
-            keys,
-            additionalKeys,
-            contextual,
-            contextNullable
-        )
+        val contextual = lastParam?.toString() == contextType.getShortName()
+        val contextNullable = !contextual || (lastParam?.resolve()?.isMarkedNullable ?: false)
+        val keys = valueParameters
+            .let { if (contextual) it.dropLast(1) else it }
+            .map(::kParam)
+        return functionDeclaration.simpleName.asString().let { serviceName ->
+            val eventName =
+                anno.stringField("eventName") ?: anno.resolveEventName(service, serviceName)
+            KMessage(
+                serviceName,
+                eventName,
+                keys,
+                anno.stringsField("additionalKeys"),
+                contextual,
+                contextNullable
+            )
+        }
     }
+
+    private fun kParam(par: KSValueParameter) =
+        KParam(
+            par.name?.asString() ?: throw IllegalStateException("Null name: $par"),
+            par.type.element.toString(),
+            par.type.resolve().isMarkedNullable
+        )
+
+    private fun KSAnnotation.resolveEventName(service: KService, serviceName: String) =
+        when {
+            boolField("fullEventName") -> "${service.service}_${serviceName}"
+            boolField("simpleEventName") -> serviceName
+            else -> null
+        }
+
+    private fun KSAnnotation.stringField(name: String) = field(name)?.toString()?.takeUnless { it.isBlank() }
+
+    private fun KSAnnotation.stringsField(name: String) = field(name).let { it as List<*> }.map { it.toString() }
+
+    private fun KSAnnotation.boolField(name: String) = field(name)?.let { it as? Boolean } ?: false
+
+    private fun KSAnnotation.field(name: String) = arguments.firstOrNull() { it.name?.asString() == name }?.value
 
     private fun writer(service: KService, className: String) =
         PrintWriter(codeGenerator.mediatorClassFile(service, className), true)
