@@ -4,17 +4,14 @@ import com.github.kjetilv.statiktalk.api.Context
 import com.github.kjetilv.statiktalk.example.testapp.shared.SessionDb
 import com.github.kjetilv.statiktalk.example.testapp.shared.Sessions
 import com.github.kjetilv.statiktalk.example.testapp.shared.User
-import org.slf4j.LoggerFactory
 
-class SessionsService(private val sessionDb: SessionDb) : Sessions {
-
-    private val logger = LoggerFactory.getLogger(SessionsService::class.java)
+class SessionsService(private val sessionDb: SessionDb, private val eventLog: (String) -> Unit) : Sessions {
 
     override fun loggedIn(userId: String, userKey: String, loginTime: String?, context: Context) {
         try {
             sessionDb.loggedIn(User(userId, userKey))
         } finally {
-            logger.info("Login was registered at $loginTime")
+            eventLog("Login was registered at $loginTime")
         }
     }
 

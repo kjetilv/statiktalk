@@ -19,6 +19,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.config.SaslConfigs
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.junit.jupiter.api.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
 import org.testcontainers.utility.DockerImageName
@@ -80,6 +81,8 @@ internal class SimpleAppTest {
 
             val sessionService = rapids.sessions()
 
+            val events = mutableListOf<String>()
+
             val authorizedUsers = mapOf("foo42" to "123")
             rapids.handleAuthorization(
                 AuthorizationService(sessionService, authorizedUsers)
@@ -97,7 +100,7 @@ internal class SimpleAppTest {
 
             val sessionDb = MemorySessionDb()
             rapids.handleSessions(
-                SessionsService(sessionDb)
+                SessionsService(sessionDb, events::add)
             )
 
             val authorizationService = rapids.authorization()
@@ -119,6 +122,9 @@ internal class SimpleAppTest {
                         )
                     } ?: false
                 }
+
+            assertEquals(1, events.size)
+            assertEquals("Login was registered at 1970-01-01", events[0])
         }
     }
 
