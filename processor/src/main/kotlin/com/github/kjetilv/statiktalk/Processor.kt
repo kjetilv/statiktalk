@@ -25,10 +25,10 @@ internal class Processor(private val codeGenerator: CodeGenerator) : SymbolProce
 
     private fun writeFiles(service: KService, messages: List<KMessage>) {
         with(writer(service, "${service.service}SenderMediator")) {
-            println(senderTemplate.source(service, messages))
+            println(SenderTemplate.source(service, messages))
         }
         with(writer(service, "${service.service}ReceiverMediator")) {
-            println(receiverTemplate.source(service, messages))
+            println(ReceiverTemplate.source(service, messages))
         }
     }
 

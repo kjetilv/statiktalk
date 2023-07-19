@@ -1,8 +1,14 @@
 package com.github.kjetilv.statiktalk
 
-internal val receiverTemplate
-    get() =
-        """
+class ReceiverTemplate {
+
+    companion object {
+
+        private val receiverTemplate
+            get() =
+                """
+@file:Suppress("unused", "UNUSED_PARAMETER", "KotlinRedundantDiagnosticSuppress")
+
 package 《s.packidge》
 
 《imports:{import|
@@ -29,18 +35,32 @@ import no.nav.helse.rapids_rivers.RapidsConnection
     《 endif》
 */
 
-@Suppress("unused")
 fun RapidsConnection.handle《s.service》(
-    《s.serviceCc》: 《s.service》, 
+    《s.serviceCc》: 《s.service》,
+《if(ps)》
+    reqs: 《s.service》Reqs? = null,    
+《endif》
     vararg additionalKeys: String
 ) {
 《ms:{m|
     《s.service》ReceiveMediator《m.upcasedServiceName》(《s.serviceCc》)
         .listenTo(
             this,
+《if(ps)》
+            reqs,    
+《endif》
             additionalKeys.toList()
         )
 }》}
+
+《if(ps)》
+@Suppress("unused")
+data class 《s.service》Reqs(
+《ps:{p|
+  val 《p.name》: 《p.type》? = null, 
+}》
+)
+《endif》
 
 《ms:{m|
 
@@ -48,7 +68,13 @@ private class 《s.service》ReceiveMediator《m.upcasedServiceName》(
     private val 《s.serviceCc》: 《s.service》
 ) : ReceiveMediatorBase() {
 
-    override fun listenTo(connection: RapidsConnection, additionalKeys: List<String>) {
+    fun listenTo(
+        connection: RapidsConnection, 
+《if(ps)》
+        reqs: 《s.service》Reqs? = null,    
+《endif》
+        additionalKeys: List<String>
+    ) {
         val requiredKeys = 《if(m.hasRequiredKeys)》listOf(《m.requiredKeys:{requiredKey|
             
             "《requiredKey.name》",}》
@@ -66,13 +92,22 @@ private class 《s.service》ReceiveMediator《m.upcasedServiceName》(
         listen(
             connection, 
             《if(m.eventName)》"《m.eventName》"《else》null《endif》, 
-            requiredKeys,
-            《if(m.hasAdditionalKeys)》
-            listOf(《m.additionalKeys:{additionalKey|"《additionalKey》", }》),
+            requiredKeys = requiredKeys,
+            《if(ps)》
+            requiredValues = mapOf(
+《ps:{p|
+                "《p.name》" to reqs?.《p.name》, 
+}》
+            ),
             《else》
-            interestingKeys,
+            requiredValues = emptyMap(), 
             《endif》
-            additionalKeys)
+            《if(m.hasAdditionalKeys)》
+            interestingKeys = listOf(《m.additionalKeys:{additionalKey|"《additionalKey》", }》),
+            《else》
+            interestingKeys = interestingKeys,
+            《endif》
+            additionalKeys = additionalKeys)
     \}
 
     @Suppress("RedundantNullableReturnType", "RedundantSuppression")
@@ -95,3 +130,7 @@ private class 《s.service》ReceiveMediator《m.upcasedServiceName》(
 
 }》
 """.trimIndent()
+
+        internal fun source(service: KService, messages: List<KMessage>) = receiverTemplate.source(service, messages)
+    }
+}

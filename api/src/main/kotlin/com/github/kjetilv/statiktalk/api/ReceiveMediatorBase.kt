@@ -8,22 +8,28 @@ import no.nav.helse.rapids_rivers.River
 
 abstract class ReceiveMediatorBase : River.PacketListener {
 
-    abstract fun listenTo(connection: RapidsConnection, additionalKeys: List<String> = emptyList())
-
     protected fun listen(
         connection: RapidsConnection,
         eventName: String?,
         requiredKeys: List<String>,
-        interestingKeys: List<String>,
-        additionalKeys: List<String>
+        requiredValues: Map<String, Any?> = emptyMap(),
+        interestingKeys: List<String> = emptyList(),
+        additionalKeys: List<String> = emptyList()
     ) {
         River(connection).apply {
             validate { message ->
                 eventName?.also {
                     message.requireValue("@event_name", it)
                 }
-                requiredKeys.forEach { key ->
+                requiredKeys.filter { requiredValues[it] == null }.forEach { key ->
                     message.requireKey(key)
+                }
+                requiredValues(requiredValues).forEach { (key, value) ->
+                    when (value) {
+                        is Number -> message.requireValue(key, value as Number)
+                        is Boolean -> message.requireValue(key, value as Boolean)
+                        else -> message.requireValue(key, value.toString())
+                    }
                 }
                 (interestingKeys + additionalKeys).forEach { key ->
                     message.interestedIn(key)
@@ -31,6 +37,18 @@ abstract class ReceiveMediatorBase : River.PacketListener {
             }
         }.register(this)
     }
+
+    private fun requiredValues(requiredValues: Map<String, Any?>) =
+        requiredValues
+            .filterValues { value -> value != null }
+            .mapValues { (key, value) ->
+                when (value!!) {
+                    is Boolean, is String, is Number -> value
+                    else ->
+                        throw java.lang.IllegalStateException(
+                            "Invalid value for required key $key: ${value} (of ${value.javaClass})")
+                }
+            }
 
     protected fun context(packet: JsonMessage, context: MessageContext) =
         DefaultContext(packet, context)

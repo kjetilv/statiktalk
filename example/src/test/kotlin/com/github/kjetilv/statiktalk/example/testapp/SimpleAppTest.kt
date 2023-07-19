@@ -6,6 +6,8 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.kjetilv.statiktalk.api.Context
 import com.github.kjetilv.statiktalk.example.testapp.microservices.*
+import com.github.kjetilv.statiktalk.example.testapp.microservices.generated.StatusProcessorReqs
+import com.github.kjetilv.statiktalk.example.testapp.microservices.generated.handleStatusProcessor
 import com.github.kjetilv.statiktalk.example.testapp.shared.User
 import com.github.kjetilv.statiktalk.example.testapp.shared.generated.*
 import io.prometheus.client.CollectorRegistry
@@ -27,6 +29,8 @@ import java.net.ServerSocket
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.TimeUnit.SECONDS
+import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.LongAdder
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal class SimpleAppTest {
@@ -75,6 +79,9 @@ internal class SimpleAppTest {
     @DelicateCoroutinesApi
     @Test
     fun `should login and collect information`() {
+        val now = AtomicReference(Instant.EPOCH)
+        val time = { now.getAndUpdate { it.plus(Duration.ofDays(1)) } }
+
         withRapid { rapids ->
             waitForEvent("application_ready")
             waitForEvent("application_up")
@@ -83,12 +90,19 @@ internal class SimpleAppTest {
 
             val events = mutableListOf<String>()
 
-            val authorizedUsers = mapOf("foo42" to "123")
+            val authorizedUsers = mapOf(
+                "foo42" to "123",
+                "kv" to "234",
+                "zot" to "345"
+            )
             rapids.handleAuthorization(
                 AuthorizationService(sessionService, authorizedUsers)
             )
 
-            val statusMap = mapOf("foo42" to "elite")
+            val statusMap = mapOf(
+                "foo42" to "elite",
+                "kv" to "harmless"
+            )
             rapids.handleAuthorizedUserEnricher(
                 StatusCustomerService(sessionService, statusMap)
             )
@@ -105,26 +119,53 @@ internal class SimpleAppTest {
 
             val authorizationService = rapids.authorization()
             rapids.handleLoginAttempt(
-                LoginAttemptService(authorizationService) { Instant.EPOCH }
+                LoginAttemptService(authorizationService, time)
             )
 
+            val elites = mutableSetOf<String>()
+            rapids.handleStatusProcessor(object : StatusProcessor {
+                override fun status(userKey: String, status: String) {
+                    elites.add(userKey)
+                }
+            }, reqs = StatusProcessorReqs(status = "elite"))
+
+            val harmlesses = mutableSetOf<String>()
+            rapids.handleStatusProcessor(object : StatusProcessor {
+                override fun status(userKey: String, status: String) {
+                    harmlesses.add(userKey)
+                }
+            }, reqs = StatusProcessorReqs(status = "harmless"))
+
             rapids.loginAttempt().loginAttempted("foo42", Context.DUMMY)
+            rapids.loginAttempt().loginAttempted("kv", Context.DUMMY)
 
             await("wait until settled")
                 .atMost(10, SECONDS)
                 .until {
-                    sessionDb.sessions().firstOrNull()?.let {
+                    sessionDb.sessions().any {
                         it == User(
                             userId = "foo42",
                             userKey = "123",
                             status = "elite",
                             returning = true
                         )
-                    } ?: false
+                    } && sessionDb.sessions().any {
+                        it == User(
+                            userId = "kv",
+                            userKey = "234",
+                            status = "harmless"
+                        )
+                    }
                 }
 
-            assertEquals(1, events.size)
+            assertEquals(2, events.size)
             assertEquals("Login was registered at 1970-01-01", events[0])
+            assertEquals("Login was registered at 1970-01-02", events[1])
+
+            assertEquals(1, harmlesses.size)
+            assertEquals("234", harmlesses.firstOrNull())
+            assertEquals(1, elites.size)
+            assertEquals("123", elites.firstOrNull())
         }
     }
 

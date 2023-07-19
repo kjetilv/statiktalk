@@ -46,10 +46,10 @@ private fun kMessage(service: KService, decl: KSFunctionDeclaration, contextType
     val contextNullable = contextArg == null || (lastParam?.type?.resolve()?.isMarkedNullable ?: false)
 
     val serviceName = decl.simpleName.asString()
-    val eventName = anno.stringField("eventName") ?: anno.resolveEventName(service, serviceName)
     val keys = valueParameters
         .let { if (contextArg != null) it.dropLast(1) else it }
         .map(::kParam)
+    val eventName = anno.stringField("eventName") ?: anno.resolveEventName(service, serviceName, keys)
     val additionalKeys = anno.stringsField("additionalKeys")
 
     return KMessage(serviceName, eventName, keys, additionalKeys, contextArg, contextNullable)
@@ -72,9 +72,9 @@ private fun kParam(par: KSValueParameter) =
         )
     }
 
-private fun KSAnnotation.resolveEventName(service: KService, serviceName: String) =
+private fun KSAnnotation.resolveEventName(service: KService, serviceName: String, keys: List<KParam>) =
     when {
-        boolField("fullEventName") -> "${service.service}_${serviceName}"
+        boolField("fullEventName") || keys.isEmpty() -> "${service.service}_${serviceName}"
         boolField("simpleEventName") -> serviceName
         else -> null
     }

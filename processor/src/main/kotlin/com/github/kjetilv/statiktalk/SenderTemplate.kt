@@ -1,8 +1,14 @@
 package com.github.kjetilv.statiktalk
 
-internal val senderTemplate
-    get() =
-        """
+
+internal class SenderTemplate {
+
+    companion object {
+        private val senderTemplate
+            get() =
+                """
+@file:Suppress("unused", "UNUSED_PARAMETER", "KotlinRedundantDiagnosticSuppress")
+
 package 《s.packidge》
 
 《imports:{import|
@@ -28,7 +34,6 @@ import no.nav.helse.rapids_rivers.RapidsConnection
     《 endif》
 */
 
-@Suppress("unused")
 fun RapidsConnection.《s.serviceCc》(): 《s.service》 =
     《s.service》SendMediator(this)
 
@@ -53,3 +58,7 @@ private class 《s.service》SendMediator(
     \}
 }》}
 """.trimIndent()
+
+        internal fun source(service: KService, messages: List<KMessage>) = senderTemplate.source(service, messages)
+    }
+}

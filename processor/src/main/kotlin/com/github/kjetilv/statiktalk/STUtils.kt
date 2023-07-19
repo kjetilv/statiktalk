@@ -10,6 +10,7 @@ internal fun String.source(service: KService, messages: List<KMessage>) =
         ST(this, '《', '》').apply {
             add("s", service)
             add("ms", messages)
+            add("ps", combinedParams(messages))
             add("debug", true)
             add("imports", imports)
         }.render().replace(TRAILING, ")").trim()
@@ -44,11 +45,14 @@ private fun implicit(types: List<String>, vararg implicits: Class<*>) =
             emptyList()
     }
 
+private fun combinedParams(messages: List<KMessage>) =
+    messages.flatMap(KMessage::keys)
+        .distinctBy(KParam::name)
+        .map { (name, type) ->
+            KParam(name, type)
+        }
+
 private fun jsonNode(messages: List<KMessage>): List<String> =
-    if (messages.any { it.hasKeys }) {
-        listOf("com.fasterxml.jackson.databind.JsonNode")
-    } else {
-        emptyList()
-    }
+    if (messages.any { it.hasKeys }) listOf("com.fasterxml.jackson.databind.JsonNode") else emptyList()
 
 private val TRAILING = ",\\s+\\)".toRegex()
