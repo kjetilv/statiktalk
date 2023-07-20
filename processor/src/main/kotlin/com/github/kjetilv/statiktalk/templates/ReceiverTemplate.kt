@@ -1,4 +1,8 @@
-package com.github.kjetilv.statiktalk
+package com.github.kjetilv.statiktalk.templates
+
+import com.github.kjetilv.statiktalk.KMessage
+import com.github.kjetilv.statiktalk.KService
+import com.github.kjetilv.statiktalk.st.source
 
 object ReceiverTemplate {
 

@@ -1,6 +1,9 @@
 package com.github.kjetilv.statiktalk
 
 import com.github.kjetilv.statiktalk.api.Context
+import com.github.kjetilv.statiktalk.ksp.mediatorClassFile
+import com.github.kjetilv.statiktalk.templates.ReceiverTemplate
+import com.github.kjetilv.statiktalk.templates.SenderTemplate
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Resolver
@@ -19,7 +22,7 @@ internal class Processor(private val codeGenerator: CodeGenerator) : SymbolProce
     }
 
     private fun Resolver.writeFiles(contextType: KSName) =
-        functionMap(this, contextType).forEach { (service, messages) ->
+        Messages.functionMap(this, contextType).forEach { (service, messages) ->
             writeFiles(service, messages)
         }
 
