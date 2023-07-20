@@ -1,12 +1,11 @@
 package com.github.kjetilv.statiktalk
 
 
-internal class SenderTemplate {
+internal object SenderTemplate {
 
-    companion object {
-        private val senderTemplate
-            get() =
-                """
+    private val senderTemplate
+        get() =
+            """
 @file:Suppress("unused", "UNUSED_PARAMETER", "KotlinRedundantDiagnosticSuppress")
 
 package 《s.packidge》
@@ -15,7 +14,6 @@ package 《s.packidge》
 import 《import》
 } 》
 import com.github.kjetilv.statiktalk.api.SendMediatorBase
-
 import 《s.sourcePackidge》.《s.service》
 
 import no.nav.helse.rapids_rivers.RapidsConnection
@@ -31,15 +29,16 @@ import no.nav.helse.rapids_rivers.RapidsConnection
       《m》
 }》
     Service: 《s》
-    《 endif》
+    《endif》
 */
 
-fun RapidsConnection.《s.serviceCc》(): 《s.service》 =
-    《s.service》SendMediator(this)
+fun RapidsConnection.《s.serviceCc》(eventName: String? = null): 《s.service》 =
+    《s.service》SendMediator(this, eventName)
 
 private class 《s.service》SendMediator(
-    rapidsConnection: RapidsConnection
-) : SendMediatorBase(rapidsConnection), 《s.service》 {
+    rapidsConnection: RapidsConnection,
+    eventName: String? = null
+) : SendMediatorBase(eventName, rapidsConnection), 《s.service》 {
 
 《ms:{m|
     override fun 《m.serviceName》(
@@ -59,6 +58,5 @@ private class 《s.service》SendMediator(
 }》}
 """.trimIndent()
 
-        internal fun source(service: KService, messages: List<KMessage>) = senderTemplate.source(service, messages)
-    }
+    internal fun source(service: KService, messages: List<KMessage>) = senderTemplate.source(service, messages)
 }

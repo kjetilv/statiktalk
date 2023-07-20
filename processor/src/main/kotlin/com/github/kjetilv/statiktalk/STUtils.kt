@@ -18,7 +18,7 @@ internal fun String.source(service: KService, messages: List<KMessage>) =
         throw IllegalStateException("Failed to render ${messages.size} messages", e)
     }
 
-private fun imports(messages: List<KMessage>): List<String> =
+private fun imports(messages: List<KMessage>) =
     messages.flatMap { message ->
         message.keys.map { key ->
             key.type
@@ -29,7 +29,7 @@ private fun imports(messages: List<KMessage>): List<String> =
                 types,
                 BigDecimal::class.java,
                 BigInteger::class.java
-            ) + jsonNode(messages)
+            )
         }
 
 private fun explicit(types: List<String>) =
@@ -51,8 +51,5 @@ private fun combinedParams(messages: List<KMessage>) =
         .map { (name, type) ->
             KParam(name, type)
         }
-
-private fun jsonNode(messages: List<KMessage>): List<String> =
-    if (messages.any { it.hasKeys }) listOf("com.fasterxml.jackson.databind.JsonNode") else emptyList()
 
 private val TRAILING = ",\\s+\\)".toRegex()

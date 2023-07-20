@@ -1,13 +1,11 @@
 package com.github.kjetilv.statiktalk
 
-class ReceiverTemplate {
+object ReceiverTemplate {
 
-    companion object {
-
-        private val receiverTemplate
-            get() =
-                """
-@file:Suppress("unused", "UNUSED_PARAMETER", "KotlinRedundantDiagnosticSuppress")
+    private val receiverTemplate
+        get() =
+            """
+@file:Suppress("unused", "UNUSED_PARAMETER", "KotlinRedundantDiagnosticSuppress", "UnusedImport")
 
 package 《s.packidge》
 
@@ -17,6 +15,7 @@ import 《import》
 import com.github.kjetilv.statiktalk.api.ReceiveMediatorBase
 import 《s.sourcePackidge》.《s.service》
 
+import com.fasterxml.jackson.databind.JsonNode
 import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.MessageContext
 import no.nav.helse.rapids_rivers.RapidsConnection
@@ -32,11 +31,12 @@ import no.nav.helse.rapids_rivers.RapidsConnection
       《m》
 }》
     Service: 《s》
-    《 endif》
+    《endif》
 */
 
 fun RapidsConnection.handle《s.service》(
     《s.serviceCc》: 《s.service》,
+    eventName: String? = null,
 《if(ps)》
     reqs: 《s.service》Reqs? = null,    
 《endif》
@@ -46,6 +46,7 @@ fun RapidsConnection.handle《s.service》(
     《s.service》ReceiveMediator《m.upcasedServiceName》(《s.serviceCc》)
         .listenTo(
             this,
+            eventName, 
 《if(ps)》
             reqs,    
 《endif》
@@ -69,7 +70,8 @@ private class 《s.service》ReceiveMediator《m.upcasedServiceName》(
 ) : ReceiveMediatorBase() {
 
     fun listenTo(
-        connection: RapidsConnection, 
+        connection: RapidsConnection,
+        eventName: String? = null, 
 《if(ps)》
         reqs: 《s.service》Reqs? = null,    
 《endif》
@@ -91,7 +93,7 @@ private class 《s.service》ReceiveMediator《m.upcasedServiceName》(
         《endif》
         listen(
             connection, 
-            《if(m.eventName)》"《m.eventName》"《else》null《endif》, 
+            eventName《if(m.eventName)》 ?: "《m.eventName》"《endif》, 
             requiredKeys = requiredKeys,
             《if(ps)》
             requiredValues = mapOf(
@@ -131,6 +133,5 @@ private class 《s.service》ReceiveMediator《m.upcasedServiceName》(
 }》
 """.trimIndent()
 
-        internal fun source(service: KService, messages: List<KMessage>) = receiverTemplate.source(service, messages)
-    }
+    internal fun source(service: KService, messages: List<KMessage>) = receiverTemplate.source(service, messages)
 }

@@ -5,9 +5,14 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.kjetilv.statiktalk.api.Context
-import com.github.kjetilv.statiktalk.example.testapp.microservices.*
+import com.github.kjetilv.statiktalk.example.testapp.microservices.MemorySessionDb
+import com.github.kjetilv.statiktalk.example.testapp.microservices.SessionsService
+import com.github.kjetilv.statiktalk.example.testapp.microservices.StatusProcessor
 import com.github.kjetilv.statiktalk.example.testapp.microservices.generated.StatusProcessorReqs
 import com.github.kjetilv.statiktalk.example.testapp.microservices.generated.handleStatusProcessor
+import com.github.kjetilv.statiktalk.example.testapp.shared.Authorization
+import com.github.kjetilv.statiktalk.example.testapp.shared.AuthorizedUserEnricher
+import com.github.kjetilv.statiktalk.example.testapp.shared.LoginAttempt
 import com.github.kjetilv.statiktalk.example.testapp.shared.User
 import com.github.kjetilv.statiktalk.example.testapp.shared.generated.*
 import io.prometheus.client.CollectorRegistry
@@ -28,9 +33,10 @@ import org.testcontainers.utility.DockerImageName
 import java.net.ServerSocket
 import java.time.Duration
 import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.atomic.LongAdder
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal class SimpleAppTest {
@@ -95,21 +101,56 @@ internal class SimpleAppTest {
                 "kv" to "234",
                 "zot" to "345"
             )
-            rapids.handleAuthorization(
-                AuthorizationService(sessionService, authorizedUsers)
-            )
 
             val statusMap = mapOf(
                 "foo42" to "elite",
                 "kv" to "harmless"
             )
-            rapids.handleAuthorizedUserEnricher(
-                StatusCustomerService(sessionService, statusMap)
+            val frequentCustomers = setOf("foo42")
+
+
+            val eliteLogins = mutableSetOf<String>()
+            val harmlessLogins = mutableSetOf<String>()
+
+            rapids.handleLoginAttempt(
+                object : LoginAttempt {
+                    override fun loginAttempted(userId: String, context: Context) {
+                        context["loginTime"] = time().atZone(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_LOCAL_DATE)
+                        rapids.authorization("loginAttempted")
+                            .userLoggedIn(userId, context)
+                    }
+                })
+
+            rapids.handleAuthorization(
+                object : Authorization {
+                    override fun userLoggedIn(userId: String, context: Context) {
+                        authorizedUsers[userId]?.also { key ->
+                            rapids.sessions()
+                                .loggedIn(userId, key, context = context)
+                        }
+                    }
+                },
+                eventName = "loginAttempted"
             )
 
-            val returningUsers = setOf("foo42")
             rapids.handleAuthorizedUserEnricher(
-                ReturningCustomerService(sessionService, returningUsers)
+                object : AuthorizedUserEnricher {
+                    override fun authorized(userId: String, userKey: String) {
+                        statusMap[userId]?.also {
+                            rapids.sessions().userHasStatus(userId, userKey, it)
+                        }
+                    }
+                }
+            )
+
+            rapids.handleAuthorizedUserEnricher(
+                object : AuthorizedUserEnricher {
+                    override fun authorized(userId: String, userKey: String) {
+                        if (frequentCustomers.contains(userId)) {
+                            rapids.sessions().userIsReturning(userId, userKey, true)
+                        }
+                    }
+                }
             )
 
             val sessionDb = MemorySessionDb()
@@ -117,22 +158,15 @@ internal class SimpleAppTest {
                 SessionsService(sessionDb, events::add)
             )
 
-            val authorizationService = rapids.authorization()
-            rapids.handleLoginAttempt(
-                LoginAttemptService(authorizationService, time)
-            )
-
-            val elites = mutableSetOf<String>()
             rapids.handleStatusProcessor(object : StatusProcessor {
                 override fun status(userKey: String, status: String) {
-                    elites.add(userKey)
+                    eliteLogins.add(userKey)
                 }
             }, reqs = StatusProcessorReqs(status = "elite"))
 
-            val harmlesses = mutableSetOf<String>()
             rapids.handleStatusProcessor(object : StatusProcessor {
                 override fun status(userKey: String, status: String) {
-                    harmlesses.add(userKey)
+                    harmlessLogins.add(userKey)
                 }
             }, reqs = StatusProcessorReqs(status = "harmless"))
 
@@ -162,10 +196,10 @@ internal class SimpleAppTest {
             assertEquals("Login was registered at 1970-01-01", events[0])
             assertEquals("Login was registered at 1970-01-02", events[1])
 
-            assertEquals(1, harmlesses.size)
-            assertEquals("234", harmlesses.firstOrNull())
-            assertEquals(1, elites.size)
-            assertEquals("123", elites.firstOrNull())
+            assertEquals(1, harmlessLogins.size)
+            assertEquals("234", harmlessLogins.firstOrNull())
+            assertEquals(1, eliteLogins.size)
+            assertEquals("123", eliteLogins.firstOrNull())
         }
     }
 
