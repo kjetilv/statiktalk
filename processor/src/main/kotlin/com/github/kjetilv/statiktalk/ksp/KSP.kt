@@ -1,27 +1,11 @@
 package com.github.kjetilv.statiktalk.ksp
 
+import com.github.kjetilv.statiktalk.KParam
 import com.github.kjetilv.statiktalk.KService
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
-
-internal fun KSAnnotation.stringField(name: String) =
-    field(name)?.toString()?.takeUnless { it.isBlank() }
-
-internal fun KSAnnotation.stringsField(name: String) =
-    field(name).let { it as List<*> }.map { it.toString() }
-
-internal fun KSAnnotation.boolField(name: String) =
-    field(name)?.let { it as? Boolean } ?: false
-
-internal fun KSAnnotation.field(name: String) =
-    arguments.firstOrNull() { it.name?.asString() == name }?.value
-
-internal fun KSFunctionDeclaration.findAnno(name: String) =
-    annotations.first { annotation ->
-        annotation.shortName.asString() == name
-    }
 
 internal fun CodeGenerator.mediatorClassFile(decl: KService, className: String) =
     createNewFile(
@@ -32,3 +16,23 @@ internal fun CodeGenerator.mediatorClassFile(decl: KService, className: String) 
         className,
         "kt"
     )
+
+internal val KSAnnotation.explicitEventName get() = stringField("eventName")
+
+internal fun KSAnnotation.syntheticEventName(service: KService, serviceName: String, keys: List<KParam>) =
+    if (boolField("syntheticEventName") || keys.isEmpty()) "${service.service}_${serviceName}"
+    else null
+
+internal fun KSAnnotation.stringField(name: String) =
+    field(name)?.toString()?.takeUnless { it.isBlank() }
+
+private fun KSAnnotation.boolField(name: String) =
+    field(name)?.let { it as? Boolean } ?: false
+
+internal fun KSFunctionDeclaration.findAnno(name: String) =
+    annotations.first { annotation ->
+        annotation.shortName.asString() == name
+    }
+
+private fun KSAnnotation.field(name: String) =
+    arguments.firstOrNull() { it.name?.asString() == name }?.value

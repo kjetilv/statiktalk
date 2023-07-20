@@ -1,13 +1,13 @@
+@file:Suppress("unused")
+
 package com.github.kjetilv.statiktalk
 
 import com.github.kjetilv.statiktalk.api.Context
 
-@Suppress("unused")
 internal data class KMessage(
     val serviceName: String,
     val eventName: String?,
     val keys: List<KParam>,
-    val additionalKeys: List<String>,
     val contextArg: String?,
     val contextualNullable: Boolean
 ) {
@@ -27,8 +27,6 @@ internal data class KMessage(
     val requiredKeys get() = keys.filterNot(KParam::optional)
 
     val interestingKeys get() = keys.filter(KParam::optional)
-
-    val hasAdditionalKeys get() = additionalKeys.isNotEmpty()
 }
 
 private val contextClassName = Context::class.java.name

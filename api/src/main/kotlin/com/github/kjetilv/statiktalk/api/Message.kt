@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.github.kjetilv.statiktalk.api
 
 import kotlin.annotation.AnnotationRetention.SOURCE
@@ -6,25 +8,18 @@ import kotlin.annotation.AnnotationTarget.FUNCTION
 /**
  * Mark a function as a message.
  */
-@Suppress("unused")
 @Target(FUNCTION)
 @Retention(SOURCE)
 annotation class Message(
 
     /**
-     * Use this event name.  Overrides simpleEventName and fullEventName.
+     * Use this event name.  Overrides syntheticEventName.
      */
     val eventName: String = "",
 
     /**
-     * Concatenate service name and function name as event name.  Overrides simpleEventName.
+     * Synthesize an event name from interface+function name. False by default, meaning that messages are routed
+     * by the parameter names only.
      */
-    val fullEventName: Boolean = false,
-
-    /**
-     * Use function name as event name.
-     */
-    val simpleEventName: Boolean = false,
-
-    val additionalKeys: Array<String> = []
+    val syntheticEventName: Boolean = false
 )

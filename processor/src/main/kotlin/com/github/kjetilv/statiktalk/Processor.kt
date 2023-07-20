@@ -1,5 +1,6 @@
 package com.github.kjetilv.statiktalk
 
+import com.github.kjetilv.statiktalk.Messages.serviceMessages
 import com.github.kjetilv.statiktalk.api.Context
 import com.github.kjetilv.statiktalk.ksp.mediatorClassFile
 import com.github.kjetilv.statiktalk.templates.ReceiverTemplate
@@ -17,14 +18,11 @@ internal class Processor(private val codeGenerator: CodeGenerator) : SymbolProce
 
     override fun process(resolver: Resolver) = emptyList<KSAnnotated>().also {
         contextType(resolver).let { contextType ->
-            resolver.writeFiles(contextType)
+            resolver.serviceMessages(contextType).forEach { (service, messages) ->
+                writeFiles(service, messages)
+            }
         }
     }
-
-    private fun Resolver.writeFiles(contextType: KSName) =
-        Messages.functionMap(this, contextType).forEach { (service, messages) ->
-            writeFiles(service, messages)
-        }
 
     private fun writeFiles(service: KService, messages: List<KMessage>) {
         with(writer(service, "${service.service}SenderMediator")) {

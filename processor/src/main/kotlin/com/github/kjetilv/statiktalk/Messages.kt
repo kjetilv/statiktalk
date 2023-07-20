@@ -1,18 +1,17 @@
 package com.github.kjetilv.statiktalk
 
 import com.github.kjetilv.statiktalk.api.Message
-import com.github.kjetilv.statiktalk.ksp.boolField
+import com.github.kjetilv.statiktalk.ksp.explicitEventName
 import com.github.kjetilv.statiktalk.ksp.findAnno
-import com.github.kjetilv.statiktalk.ksp.stringField
-import com.github.kjetilv.statiktalk.ksp.stringsField
+import com.github.kjetilv.statiktalk.ksp.syntheticEventName
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.*
 
 object Messages {
 
-    internal fun functionMap(resolver: Resolver, contextType: KSName) =
+    internal fun Resolver.serviceMessages(contextType: KSName) =
         try {
-            resolver.getSymbolsWithAnnotation(ANNOTATION_NAME)
+            getSymbolsWithAnnotation(ANNOTATION_NAME)
                 .mapNotNull { it as? KSFunctionDeclaration }
                 .groupBy { declaringClass(it) }
                 .mapKeys { (classDeclaration, _) ->
@@ -52,13 +51,14 @@ object Messages {
         val contextNullable = contextArg == null || (lastParam?.type?.resolve()?.isMarkedNullable ?: false)
 
         val serviceName = decl.simpleName.asString()
-        val keys = valueParameters
-            .let { if (contextArg != null) it.dropLast(1) else it }
-            .map(::kParam)
-        val eventName = anno.stringField("eventName") ?: anno.resolveEventName(service, serviceName, keys)
-        val additionalKeys = anno.stringsField("additionalKeys")
+        val keys =
+            valueParameters
+                .let { if (contextArg != null) it.dropLast(1) else it }
+                .map(::kParam)
+        val eventName =
+            anno.explicitEventName ?: anno.syntheticEventName(service, serviceName, keys)
 
-        return KMessage(serviceName, eventName, keys, additionalKeys, contextArg, contextNullable)
+        return KMessage(serviceName, eventName, keys, contextArg, contextNullable)
     }
 
     private fun isContextArg(
@@ -76,13 +76,6 @@ object Messages {
                 par.type.element.toString(),
                 ksType.isMarkedNullable
             )
-        }
-
-    private fun KSAnnotation.resolveEventName(service: KService, serviceName: String, keys: List<KParam>) =
-        when {
-            boolField("fullEventName") || keys.isEmpty() -> "${service.service}_${serviceName}"
-            boolField("simpleEventName") -> serviceName
-            else -> null
         }
 
     private fun verified(decls: List<KSFunctionDeclaration>) =

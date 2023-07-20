@@ -59,7 +59,6 @@ fun RapidsConnection.handle《s.service》(
 }》}
 
 《if(ps)》
-@Suppress("unused")
 data class 《s.service》Reqs(
 《ps:{p|
   val 《p.name》: 《p.type》? = null, 
@@ -108,11 +107,7 @@ private class 《s.service》ReceiveMediator《m.upcasedServiceName》(
             《else》
             requiredValues = emptyMap(), 
             《endif》
-            《if(m.hasAdditionalKeys)》
-            interestingKeys = listOf(《m.additionalKeys:{additionalKey|"《additionalKey》", }》),
-            《else》
             interestingKeys = interestingKeys,
-            《endif》
             additionalKeys = additionalKeys)
     \}
 

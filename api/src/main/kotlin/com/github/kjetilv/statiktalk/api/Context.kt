@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.github.kjetilv.statiktalk.api
 
 import com.fasterxml.jackson.databind.JsonNode
@@ -5,7 +7,6 @@ import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.MessageContext
 import java.math.BigDecimal
 
-@Suppress("unused")
 interface Context {
     object DUMMY : Context {
 

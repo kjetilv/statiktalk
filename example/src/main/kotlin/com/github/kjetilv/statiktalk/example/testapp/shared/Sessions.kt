@@ -5,7 +5,7 @@ import com.github.kjetilv.statiktalk.api.Message
 
 interface Sessions {
 
-    @Message(simpleEventName = true)
+    @Message(syntheticEventName = true)
     fun loggedIn(
         userId: String,
         userKey: String,
@@ -13,14 +13,14 @@ interface Sessions {
         context: Context
     )
 
-    @Message(simpleEventName = true)
+    @Message(syntheticEventName = true)
     fun userIsReturning(
         userId: String,
         userKey: String,
         returning: Boolean,
     )
 
-    @Message(simpleEventName = true)
+    @Message(syntheticEventName = true)
     fun userHasStatus(
         userId: String,
         userKey: String,
