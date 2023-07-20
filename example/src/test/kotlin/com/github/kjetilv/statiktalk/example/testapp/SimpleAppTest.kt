@@ -7,13 +7,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.kjetilv.statiktalk.api.Context
 import com.github.kjetilv.statiktalk.example.testapp.microservices.MemorySessionDb
 import com.github.kjetilv.statiktalk.example.testapp.microservices.SessionsService
-import com.github.kjetilv.statiktalk.example.testapp.microservices.StatusProcessor
-import com.github.kjetilv.statiktalk.example.testapp.microservices.generated.StatusProcessorReqs
-import com.github.kjetilv.statiktalk.example.testapp.microservices.generated.handleStatusProcessor
-import com.github.kjetilv.statiktalk.example.testapp.shared.Authorization
-import com.github.kjetilv.statiktalk.example.testapp.shared.AuthorizedUserEnricher
-import com.github.kjetilv.statiktalk.example.testapp.shared.LoginAttempt
-import com.github.kjetilv.statiktalk.example.testapp.shared.User
+import com.github.kjetilv.statiktalk.example.testapp.shared.*
 import com.github.kjetilv.statiktalk.example.testapp.shared.generated.*
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
@@ -86,37 +80,39 @@ internal class SimpleAppTest {
     @Test
     fun `should login and collect information`() {
         val now = AtomicReference(Instant.EPOCH)
-        val time = { now.getAndUpdate { it.plus(Duration.ofDays(1)) } }
+        val time = {
+            now.getAndUpdate {
+                it.plus(Duration.ofDays(1))
+            }.atZone(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_LOCAL_DATE)
+        }
+
+        val events = mutableListOf<String>()
+        val unauth = mutableMapOf<String, String>()
+
+        val authorizedUsers = mapOf(
+            "foo42" to "123",
+            "kv" to "234",
+            "zot" to "345"
+        )
+
+        val statusMap = mapOf(
+            "foo42" to "elite",
+            "kv" to "harmless"
+        )
+        val frequentCustomers = setOf("foo42")
+
+        val eliteLogins = mutableSetOf<String>()
+        val harmlessLogins = mutableSetOf<String>()
 
         withRapid { rapids ->
             waitForEvent("application_ready")
             waitForEvent("application_up")
 
-            val sessionService = rapids.sessions()
-
-            val events = mutableListOf<String>()
-
-            val authorizedUsers = mapOf(
-                "foo42" to "123",
-                "kv" to "234",
-                "zot" to "345"
-            )
-
-            val statusMap = mapOf(
-                "foo42" to "elite",
-                "kv" to "harmless"
-            )
-            val frequentCustomers = setOf("foo42")
-
-
-            val eliteLogins = mutableSetOf<String>()
-            val harmlessLogins = mutableSetOf<String>()
-
             rapids.handleLoginAttempt(
                 object : LoginAttempt {
                     override fun loginAttempted(userId: String, context: Context) {
-                        context["loginTime"] = time().atZone(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_LOCAL_DATE)
-                        rapids.authorization("loginAttempted")
+                        context["loginTime"] = time()
+                        rapids.authorization()
                             .userLoggedIn(userId, context)
                     }
                 })
@@ -124,14 +120,19 @@ internal class SimpleAppTest {
             rapids.handleAuthorization(
                 object : Authorization {
                     override fun userLoggedIn(userId: String, context: Context) {
-                        authorizedUsers[userId]?.also { key ->
+                        authorizedUsers[userId]?.let { key ->
                             rapids.sessions()
                                 .loggedIn(userId, key, context = context)
-                        }
+                        } ?: rapids.unauthorized().unknownuser(userId, context = context)
                     }
-                },
-                eventName = "loginAttempted"
+                }
             )
+
+            rapids.handleUnauthorized(object : Unauthorized {
+                override fun unknownuser(userId: String, loginTime: String?, context: Context) {
+                    unauth[userId] = loginTime ?: "unknown"
+                }
+            })
 
             rapids.handleAuthorizedUserEnricher(
                 object : AuthorizedUserEnricher {
@@ -170,8 +171,12 @@ internal class SimpleAppTest {
                 }
             }, reqs = StatusProcessorReqs(status = "harmless"))
 
-            rapids.loginAttempt().loginAttempted("foo42", Context.DUMMY)
-            rapids.loginAttempt().loginAttempted("kv", Context.DUMMY)
+            rapids.loginAttempt().apply {
+                loginAttempted("foo42")
+                loginAttempted("unknown")
+                loginAttempted("kv")
+                loginAttempted("stranger")
+            }
 
             await("wait until settled")
                 .atMost(10, SECONDS)
@@ -189,18 +194,22 @@ internal class SimpleAppTest {
                             userKey = "234",
                             status = "harmless"
                         )
-                    }
+                    } && unauth.size == 2
                 }
-
-            assertEquals(2, events.size)
-            assertEquals("Login was registered at 1970-01-01", events[0])
-            assertEquals("Login was registered at 1970-01-02", events[1])
-
-            assertEquals(1, harmlessLogins.size)
-            assertEquals("234", harmlessLogins.firstOrNull())
-            assertEquals(1, eliteLogins.size)
-            assertEquals("123", eliteLogins.firstOrNull())
         }
+
+        assertEquals(2, events.size)
+        assertEquals("Login was registered at 1970-01-01", events[0])
+        assertEquals("Login was registered at 1970-01-03", events[1])
+
+        assertEquals(1, harmlessLogins.size)
+        assertEquals("234", harmlessLogins.firstOrNull())
+        assertEquals(1, eliteLogins.size)
+        assertEquals("123", eliteLogins.firstOrNull())
+
+        assertEquals("1970-01-02", unauth["unknown"])
+        assertEquals("1970-01-04", unauth["stranger"])
+
     }
 
     private fun waitForEvent(event: String): JsonNode? {

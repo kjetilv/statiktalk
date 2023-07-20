@@ -1,4 +1,4 @@
-package com.github.kjetilv.statiktalk.example.testapp.microservices
+package com.github.kjetilv.statiktalk.example.testapp.shared
 
 import com.github.kjetilv.statiktalk.api.Message
 
