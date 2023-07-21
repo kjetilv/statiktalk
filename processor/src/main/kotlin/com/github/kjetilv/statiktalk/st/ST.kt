@@ -22,37 +22,22 @@ internal fun String.source(service: KService, messages: List<KMessage>) =
     }
 
 private fun imports(messages: List<KMessage>) =
-    messages.flatMap { message ->
-        message.keys.map { key ->
-            key.type
-        }
-    }.distinct()
-        .let { types ->
-            explicit(types) + implicit(
-                types,
-                BigDecimal::class.java,
-                BigInteger::class.java
-            )
-        }
+    messages.flatMap { message -> message.keys.map { key -> key.type } }
+        .distinct()
+        .let { types -> explicit(types) + implicit(types, BigDecimal::class.java, BigInteger::class.java) }
 
 private fun explicit(types: List<String>) =
-    types.filter { type ->
-        type.startsWith("java") || type.startsWith("kotlin")
-    }
+    types.filter { type -> type.startsWith("java") || type.startsWith("kotlin") }
 
 private fun implicit(types: List<String>, vararg implicits: Class<*>) =
     implicits.flatMap { implicit ->
-        if (types.contains(implicit.simpleName))
-            listOf(implicit.name)
-        else
-            emptyList()
+        if (types.contains(implicit.simpleName)) listOf(implicit.name)
+        else emptyList()
     }
 
 private fun combinedParams(messages: List<KMessage>) =
     messages.flatMap(KMessage::keys)
         .distinctBy(KParam::name)
-        .map { (name, type) ->
-            KParam(name, type)
-        }
+        .map { (name, type) -> KParam(name, type) }
 
 private val TRAILING = ",\\s+\\)".toRegex()

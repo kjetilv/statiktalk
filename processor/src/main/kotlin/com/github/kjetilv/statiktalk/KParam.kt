@@ -13,7 +13,6 @@ internal data class KParam(val name: String, val type: String, val optional: Boo
         "BigDecimal", "java.math.BigDecimal" -> "decimalValue"
         "BigInteger", "java.math.BigInteger" -> "bigIntegerValue"
         "boolean", "kotlin.Boolean", "Boolean", "java.lang.Boolean" -> "booleanValue"
-        else ->
-            throw IllegalStateException("Unsupported type for parameter $name: $type")
+        else -> throw IllegalStateException("Unsupported type for parameter $name: $type")
     }
 }

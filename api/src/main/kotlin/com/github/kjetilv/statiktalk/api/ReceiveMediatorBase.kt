@@ -28,13 +28,7 @@ abstract class ReceiveMediatorBase : River.PacketListener {
     }
 
     private fun JsonMessage.registerEventName(eventName: String?) =
-        eventName?.also {
-            requireValue(eventNameKey, it)
-        }
-
-    private fun notIn(requiredValues: Map<String, Any?>): (String) -> Boolean = {
-        requiredValues[it] == null
-    }
+        eventName?.also { requireValue(eventNameKey, it) }
 
     private fun JsonMessage.registerRequiredKeys(keys: List<String>) = keys.forEach { key ->
         requireKey(key)
@@ -51,16 +45,15 @@ abstract class ReceiveMediatorBase : River.PacketListener {
             }
 
     private fun JsonMessage.registerInterestingKeys(interestingKeys: List<String>, additionalKeys: List<String>) =
-        (interestingKeys + additionalKeys).forEach { key ->
-            interestedIn(key)
-        }
+        (interestingKeys + additionalKeys).forEach { key -> interestedIn(key) }
 
-    protected fun context(packet: JsonMessage, context: MessageContext) =
-        DefaultContext(packet, context)
+    private fun notIn(requiredValues: Map<String, Any?>): (String) -> Boolean =
+        { requiredValues[it] == null }
 
-    protected fun <T> JsonMessage.resolveRequired(name: String, resolver: (JsonNode) -> T): T =
-        resolve(name, resolver) ?: throw IllegalStateException("Not found in $this: $name")
+    protected fun context(packet: JsonMessage, context: MessageContext) = DefaultContext(packet, context)
 
-    protected fun <T> JsonMessage.resolve(name: String, resolver: (JsonNode) -> T) =
+    protected fun <T> JsonMessage.resolveRequired(name: String, resolver: (JsonNode) -> T) =
         get(name).takeUnless(JsonNode::isNull)?.let(resolver)
+            ?: throw IllegalStateException("Not found in $this: $name")
+
 }

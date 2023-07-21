@@ -31,9 +31,9 @@ object Messages {
     private val ANNOTATION_SHORT_NAME = Message::class.java.simpleName
 
     private fun declaringClass(decl: KSFunctionDeclaration) =
-        (decl.parentDeclaration as? KSClassDeclaration)?.takeIf {
-            it.classKind == ClassKind.INTERFACE
-        } ?: throw IllegalStateException("An interface is needed to hold $decl")
+        (decl.parentDeclaration as? KSClassDeclaration)
+            ?.takeIf { it.classKind == ClassKind.INTERFACE }
+            ?: throw IllegalStateException("An interface is needed to hold $decl")
 
     private fun kService(decl: KSClassDeclaration) =
         KService(
@@ -49,22 +49,15 @@ object Messages {
         val lastParam = valueParameters.lastOrNull()
         val contextArg = if (isContextArg(lastParam, contextType)) lastParam?.name?.asString() else null
         val contextNullable = contextArg == null || (lastParam?.type?.resolve()?.isMarkedNullable ?: false)
-
         val serviceName = decl.simpleName.asString()
-        val keys =
-            valueParameters
-                .let { if (contextArg != null) it.dropLast(1) else it }
-                .map(::kParam)
-        val eventName =
-            anno.explicitEventName ?: anno.syntheticEventName(service, serviceName, keys)
-
+        val keys = valueParameters
+            .let { if (contextArg != null) it.dropLast(1) else it }
+            .map(::kParam)
+        val eventName = anno.explicitEventName ?: anno.syntheticEventName(service, serviceName, keys)
         return KMessage(serviceName, eventName, keys, contextArg, contextNullable)
     }
 
-    private fun isContextArg(
-        lastParam: KSValueParameter?,
-        contextType: KSName
-    ) =
+    private fun isContextArg(lastParam: KSValueParameter?, contextType: KSName) =
         lastParam?.type?.toString()
             ?.let { it == contextType.getShortName() || it == contextType.asString() }
             ?: false

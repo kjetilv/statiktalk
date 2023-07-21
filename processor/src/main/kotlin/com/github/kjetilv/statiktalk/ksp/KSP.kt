@@ -23,16 +23,11 @@ internal fun KSAnnotation.syntheticEventName(service: KService, serviceName: Str
     if (boolField("syntheticEventName") || keys.isEmpty()) "${service.service}_${serviceName}"
     else null
 
-internal fun KSAnnotation.stringField(name: String) =
-    field(name)?.toString()?.takeUnless { it.isBlank() }
+internal fun KSAnnotation.stringField(name: String) = field(name)?.toString()?.takeUnless { it.isBlank() }
 
-private fun KSAnnotation.boolField(name: String) =
-    field(name)?.let { it as? Boolean } ?: false
+private fun KSAnnotation.boolField(name: String) = field(name)?.let { it as? Boolean } ?: false
 
 internal fun KSFunctionDeclaration.findAnno(name: String) =
-    annotations.first { annotation ->
-        annotation.shortName.asString() == name
-    }
+    annotations.first { annotation -> annotation.shortName.asString() == name }
 
-private fun KSAnnotation.field(name: String) =
-    arguments.firstOrNull() { it.name?.asString() == name }?.value
+private fun KSAnnotation.field(name: String) = arguments.firstOrNull() { it.name?.asString() == name }?.value
