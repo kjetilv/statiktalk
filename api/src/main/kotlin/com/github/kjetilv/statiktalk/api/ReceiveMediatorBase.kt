@@ -21,34 +21,24 @@ abstract class ReceiveMediatorBase : River.PacketListener {
                 eventName?.also {
                     message.requireValue("@event_name", it)
                 }
-                requiredKeys.filter { requiredValues[it] == null }.forEach { key ->
-                    message.requireKey(key)
-                }
-                requiredValues(requiredValues).forEach { (key, value) ->
-                    when (value) {
-                        is Number -> message.requireValue(key, value as Number)
-                        is Boolean -> message.requireValue(key, value as Boolean)
-                        else -> message.requireValue(key, value.toString())
+                requiredKeys.filter { requiredValues[it] == null }
+                    .forEach { key ->
+                        message.requireKey(key)
                     }
-                }
+                requiredValues.filterValues { value -> value != null }
+                    .forEach { (key, value) ->
+                        when (value) {
+                            is Number -> message.requireValue(key, value)
+                            is Boolean -> message.requireValue(key, value)
+                            else -> message.requireValue(key, value.toString())
+                        }
+                    }
                 (interestingKeys + additionalKeys).forEach { key ->
                     message.interestedIn(key)
                 }
             }
         }.register(this)
     }
-
-    private fun requiredValues(requiredValues: Map<String, Any?>) =
-        requiredValues
-            .filterValues { value -> value != null }
-            .mapValues { (key, value) ->
-                when (value!!) {
-                    is Boolean, is String, is Number -> value
-                    else ->
-                        throw java.lang.IllegalStateException(
-                            "Invalid value for required key $key: ${value} (of ${value.javaClass})")
-                }
-            }
 
     protected fun context(packet: JsonMessage, context: MessageContext) =
         DefaultContext(packet, context)

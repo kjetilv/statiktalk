@@ -36,7 +36,7 @@ import no.nav.helse.rapids_rivers.RapidsConnection
 */
 
 fun RapidsConnection.《s.serviceCc》(eventName: String? = null): 《s.service》 =
-    《s.service》SendMediator(this, eventName)
+    《s.service》SendMediator(rapidsConnection = this, eventName = eventName)
 
 private class 《s.service》SendMediator(
     rapidsConnection: RapidsConnection,
