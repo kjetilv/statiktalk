@@ -94,8 +94,7 @@ private class 《s.service》ReceiveMediator《m.upcasedServiceName》(
         《else》
             emptyList<String>()
         《endif》
-        listen(
-            connection, 
+        connection.listen(
             eventName《if(m.eventName)》 ?: "《m.eventName》"《endif》, 
             requiredKeys = requiredKeys,
             《if(ps)》
