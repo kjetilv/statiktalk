@@ -36,11 +36,11 @@ internal class Processor(private val codeGenerator: CodeGenerator) : SymbolProce
     private fun writer(service: KService, className: String) =
         PrintWriter(codeGenerator.mediatorClassFile(service, className), true)
 
-    companion object {
+    private companion object {
 
         private val contextClassName = AtomicReference<KSName>()
 
-        fun contextType(resolver: Resolver): KSName = contextClassName.updateAndGet { resolved: KSName? ->
+        private fun contextType(resolver: Resolver): KSName = contextClassName.updateAndGet { resolved: KSName? ->
             resolved ?: resolveWith(resolver)
         }
 
