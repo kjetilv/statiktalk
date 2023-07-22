@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.kjetilv.statiktalk.api.Context
-import com.github.kjetilv.statiktalk.example.testapp.microservices.MemorySessionDb
-import com.github.kjetilv.statiktalk.example.testapp.microservices.SessionsService
+import com.github.kjetilv.statiktalk.example.testapp.db.MemorySessionDb
+import com.github.kjetilv.statiktalk.example.testapp.shared.SessionsDao
 import com.github.kjetilv.statiktalk.example.testapp.shared.*
 import com.github.kjetilv.statiktalk.example.testapp.shared.generated.*
 import io.prometheus.client.CollectorRegistry
@@ -156,7 +156,7 @@ internal class SimpleAppTest {
 
             val sessionDb = MemorySessionDb()
             rapids.handleSessions(
-                SessionsService(sessionDb, events::add)
+                SessionsDao(sessionDb, events::add)
             )
 
             rapids.handleStatusProcessor(object : StatusProcessor {

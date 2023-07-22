@@ -1,4 +1,4 @@
-package com.github.kjetilv.statiktalk.example.testapp.microservices
+package com.github.kjetilv.statiktalk.example.testapp.db
 
 import com.github.kjetilv.statiktalk.example.testapp.shared.SessionDb
 import com.github.kjetilv.statiktalk.example.testapp.shared.User

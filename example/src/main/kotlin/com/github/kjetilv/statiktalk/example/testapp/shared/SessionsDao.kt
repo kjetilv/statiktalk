@@ -1,11 +1,8 @@
-package com.github.kjetilv.statiktalk.example.testapp.microservices
+package com.github.kjetilv.statiktalk.example.testapp.shared
 
 import com.github.kjetilv.statiktalk.api.Context
-import com.github.kjetilv.statiktalk.example.testapp.shared.SessionDb
-import com.github.kjetilv.statiktalk.example.testapp.shared.Sessions
-import com.github.kjetilv.statiktalk.example.testapp.shared.User
 
-class SessionsService(private val sessionDb: SessionDb, private val eventLog: (String) -> Unit) : Sessions {
+class SessionsDao(private val sessionDb: SessionDb, private val eventLog: (String) -> Unit) : Sessions {
 
     override fun loggedIn(userId: String, userKey: String, loginTime: String?, context: Context) =
         try {
