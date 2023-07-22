@@ -10,6 +10,7 @@ import java.math.BigDecimal
 data class DefaultContext(override val packet: JsonMessage, override val context: MessageContext) : Context
 
 interface Context {
+
     object DUMMY : Context {
 
         override val packet: JsonMessage get() = throw IllegalStateException("Dummy context")
@@ -21,21 +22,13 @@ interface Context {
 
     val context: MessageContext
 
-    operator fun set(key: String, value: String) {
-        packet[key] = value
-    }
+    operator fun set(key: String, value: String) { packet[key] = value }
 
-    operator fun set(key: String, value: Boolean) {
-        packet[key] = value
-    }
+    operator fun set(key: String, value: Boolean) { packet[key] = value }
 
-    operator fun set(key: String, value: Long) {
-        packet[key] = value
-    }
+    operator fun set(key: String, value: Long) { packet[key] = value }
 
-    operator fun set(key: String, value: BigDecimal) {
-        packet[key] = value
-    }
+    operator fun set(key: String, value: BigDecimal) { packet[key] = value }
 
     fun getString(key: String) = get(key)?.textValue()
 
@@ -53,7 +46,5 @@ interface Context {
 
     fun getBigInteger(key: String) = get(key)?.bigIntegerValue()
 
-    private fun get(key: String): JsonNode? {
-        return packet[key].takeUnless { it.isNull }
-    }
+    private fun get(key: String): JsonNode? = packet[key].takeUnless { it.isNull }
 }

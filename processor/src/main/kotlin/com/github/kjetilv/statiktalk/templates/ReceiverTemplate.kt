@@ -6,9 +6,8 @@ import com.github.kjetilv.statiktalk.st.source
 
 object ReceiverTemplate {
 
-    private val receiverTemplate
-        get() =
-            """
+    private val receiverTemplate =
+        """
 @file:Suppress("unused", "UNUSED_PARAMETER", "KotlinRedundantDiagnosticSuppress", "UnusedImport")
 
 package 《s.packidge》
@@ -61,8 +60,8 @@ fun RapidsConnection.handle《s.service》(
 《if(ps)》
 data class 《s.service》Reqs(
 《ps:{p|
-  val 《p.name》: 《p.type》? = null, 
-}》
+    val 《p.name》: 《p.type》? = null};separator=",
+    "》
 )
 《endif》
 
@@ -89,7 +88,8 @@ private class 《s.service》ReceiveMediator《m.upcasedServiceName》(
         《endif》
         val interestingKeys = 《if(m.hasInterestingKeys)》listOf(《m.interestingKeys:{interestingKey|
             
-            "《interestingKey.name》",}》
+            "《interestingKey.name》"};separator=",
+            "》
         )
         《else》
             emptyList<String>()

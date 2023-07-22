@@ -1,7 +1,7 @@
 package com.github.kjetilv.statiktalk
 
 import com.github.kjetilv.statiktalk.api.Message
-import com.github.kjetilv.statiktalk.ksp.explicitEventName
+import com.github.kjetilv.statiktalk.ksp.eventName
 import com.github.kjetilv.statiktalk.ksp.findAnno
 import com.github.kjetilv.statiktalk.ksp.syntheticEventName
 import com.google.devtools.ksp.processing.Resolver
@@ -9,22 +9,17 @@ import com.google.devtools.ksp.symbol.*
 
 object Messages {
 
-    internal fun Resolver.serviceMessages(contextType: KSName) =
-        try {
-            getSymbolsWithAnnotation(ANNOTATION_NAME)
-                .mapNotNull { it as? KSFunctionDeclaration }
-                .groupBy { declaringClass(it) }
-                .mapKeys { (classDeclaration, _) ->
-                    kService(classDeclaration)
-                }
-                .mapValues { (service, functionDeclarations) ->
-                    verified(functionDeclarations).map {
-                        kMessage(service, verified(service, it), contextType)
-                    }
-                }
-        } catch (e: Exception) {
-            throw IllegalStateException("Failed to process messages", e)
-        }
+    internal fun Resolver.serviceMessages(contextType: KSName) = try {
+        getSymbolsWithAnnotation(ANNOTATION_NAME)
+            .mapNotNull { it as? KSFunctionDeclaration }
+            .groupBy { declaringClass(it) }
+            .mapKeys { (classDecl, _) -> kService(classDecl) }
+            .mapValues { (service, funDecls) ->
+                verified(funDecls).map { kMessage(service, verified(service, it), contextType) }
+            }
+    } catch (e: Exception) {
+        throw IllegalStateException("Failed to process messages", e)
+    }
 
     private val ANNOTATION_NAME = Message::class.java.name
 
@@ -53,14 +48,14 @@ object Messages {
         val keys = valueParameters
             .let { if (contextArg != null) it.dropLast(1) else it }
             .map(::kParam)
-        val eventName = anno.explicitEventName ?: anno.syntheticEventName(service, serviceName, keys)
+        val eventName = anno.eventName ?: anno.syntheticEventName(service, serviceName, keys)
         return KMessage(serviceName, eventName, keys, contextArg, contextNullable)
     }
 
     private fun isContextArg(lastParam: KSValueParameter?, contextType: KSName) =
-        lastParam?.type?.toString()
-            ?.let { it == contextType.getShortName() || it == contextType.asString() }
-            ?: false
+        lastParam?.type?.toString()?.isContext(contextType) ?: false
+
+    private fun String.isContext(type: KSName) = this in setOf(type.getShortName(), this == type.asString())
 
     private fun kParam(par: KSValueParameter) =
         par.type.resolve().let { ksType ->

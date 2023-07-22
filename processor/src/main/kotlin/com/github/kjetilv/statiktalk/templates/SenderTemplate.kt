@@ -6,9 +6,8 @@ import com.github.kjetilv.statiktalk.st.source
 
 internal object SenderTemplate {
 
-    private val senderTemplate
-        get() =
-            """
+    private val senderTemplate =
+        """
 @file:Suppress("unused", "UNUSED_PARAMETER", "KotlinRedundantDiagnosticSuppress")
 
 package 《s.packidge》
@@ -55,8 +54,9 @@ private class 《s.service》SendMediator(
             《if(m.contextual)》《m.contextArg》《else》null《endif》,
             《if(m.eventName)》"@event_name" to "《m.eventName》",《endif》
 《m.keys:{key|
-            "《key.name》" to 《key.name》,
-            }》)
+            "《key.name》" to 《key.name》};separator=",
+            "》
+        )
     \}
 }》}
 """.trimIndent()

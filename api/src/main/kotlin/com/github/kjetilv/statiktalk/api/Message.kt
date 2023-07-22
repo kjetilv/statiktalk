@@ -18,8 +18,8 @@ annotation class Message(
     val eventName: String = "",
 
     /**
-     * Synthesize an event name from interface+function name. False by default, meaning that messages are routed
-     * by the parameter names only.
+     * Synthesize an event name from interface+function name.
+     * By default, messages are routed by the parameter/field names only.
      */
     val syntheticEventName: Boolean = false
 )

@@ -4,7 +4,7 @@ package com.github.kjetilv.statiktalk
 
 internal data class KParam(val name: String, val type: String, val optional: Boolean = false) {
 
-    val jsonType: String = when (type) {
+    val jsonType = when (type) {
         "String", "kotlin.String", "java.lang.String" -> "textValue"
         "long", "Long", "kotlin.Long", "java.lang.Long" -> "longValue"
         "int", "Int", "kotlin.Int", "Integer", "java.lang.Integer" -> "intValue"

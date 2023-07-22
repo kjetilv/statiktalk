@@ -17,11 +17,10 @@ internal fun CodeGenerator.mediatorClassFile(decl: KService, className: String) 
         "kt"
     )
 
-internal val KSAnnotation.explicitEventName get() = stringField("eventName")
+internal val KSAnnotation.eventName get() = stringField("eventName")
 
 internal fun KSAnnotation.syntheticEventName(service: KService, serviceName: String, keys: List<KParam>) =
-    if (boolField("syntheticEventName") || keys.isEmpty()) "${service.service}_${serviceName}"
-    else null
+    if (boolField("syntheticEventName") || keys.isEmpty()) "${service.service}_${serviceName}" else null
 
 internal fun KSAnnotation.stringField(name: String) = field(name)?.toString()?.takeUnless { it.isBlank() }
 
@@ -30,4 +29,4 @@ private fun KSAnnotation.boolField(name: String) = field(name)?.let { it as? Boo
 internal fun KSFunctionDeclaration.findAnno(name: String) =
     annotations.first { annotation -> annotation.shortName.asString() == name }
 
-private fun KSAnnotation.field(name: String) = arguments.firstOrNull() { it.name?.asString() == name }?.value
+private fun KSAnnotation.field(name: String) = arguments.firstOrNull { it.name?.asString() == name }?.value

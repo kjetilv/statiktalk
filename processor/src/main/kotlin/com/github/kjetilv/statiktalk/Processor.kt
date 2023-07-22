@@ -45,9 +45,8 @@ internal class Processor(private val codeGenerator: CodeGenerator) : SymbolProce
         }
 
         private fun resolveWith(resolver: Resolver) =
-            resolver.getClassDeclarationByName(CONTEXT_CLASS)?.qualifiedName
+            resolver.getClassDeclarationByName(Context::class.java.name)?.qualifiedName
                 ?: throw IllegalStateException("Could not resolve context type")
-
-        private val CONTEXT_CLASS = Context::class.java.name
     }
 }
+
