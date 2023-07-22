@@ -104,6 +104,9 @@ internal class SimpleAppTest {
         val eliteLogins = mutableSetOf<String>()
         val harmlessLogins = mutableSetOf<String>()
 
+        val sessionDb = MemorySessionDb()
+        val sessionsDao = SessionsDao(sessionDb, events::add)
+
         withRapid { rapids ->
             waitForEvent("application_ready")
             waitForEvent("application_up")
@@ -154,11 +157,6 @@ internal class SimpleAppTest {
                 }
             )
 
-            val sessionDb = MemorySessionDb()
-            rapids.handleSessions(
-                SessionsDao(sessionDb, events::add)
-            )
-
             rapids.handleStatusProcessor(object : StatusProcessor {
                 override fun status(userKey: String, status: String) {
                     eliteLogins.add(userKey)
@@ -170,6 +168,8 @@ internal class SimpleAppTest {
                     harmlessLogins.add(userKey)
                 }
             }, reqs = StatusProcessorReqs(status = "harmless"))
+
+            rapids.handleSessions(sessionsDao)
 
             rapids.loginAttempt().apply {
                 loginAttempted("foo42")
