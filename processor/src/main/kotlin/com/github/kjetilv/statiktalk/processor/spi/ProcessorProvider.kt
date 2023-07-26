@@ -1,4 +1,4 @@
-package com.github.kjetilv.statiktalk
+package com.github.kjetilv.statiktalk.processor.spi
 
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.processing.SymbolProcessorEnvironment

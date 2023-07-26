@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package com.github.kjetilv.statiktalk
+package com.github.kjetilv.statiktalk.processor
 
 internal data class KParam(val name: String, val type: String, val optional: Boolean = false) {
 

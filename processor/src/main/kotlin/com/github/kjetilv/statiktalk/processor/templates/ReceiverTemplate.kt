@@ -1,10 +1,10 @@
-package com.github.kjetilv.statiktalk.templates
+package com.github.kjetilv.statiktalk.processor.templates
 
-import com.github.kjetilv.statiktalk.KMessage
-import com.github.kjetilv.statiktalk.KService
-import com.github.kjetilv.statiktalk.st.source
+import com.github.kjetilv.statiktalk.processor.KMessage
+import com.github.kjetilv.statiktalk.processor.KService
+import com.github.kjetilv.statiktalk.processor.st.source
 
-object ReceiverTemplate {
+internal object ReceiverTemplate {
 
     private val receiverTemplate =
         """
@@ -131,5 +131,5 @@ private class 《s.service》ReceiveMediator《m.upcasedServiceName》(
 }》
 """.trimIndent()
 
-    internal fun source(service: KService, messages: List<KMessage>) = receiverTemplate.source(service, messages)
+    fun source(service: KService, messages: List<KMessage>) = receiverTemplate.source(service, messages)
 }

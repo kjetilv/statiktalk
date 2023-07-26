@@ -1,8 +1,8 @@
-package com.github.kjetilv.statiktalk.templates
+package com.github.kjetilv.statiktalk.processor.templates
 
-import com.github.kjetilv.statiktalk.KMessage
-import com.github.kjetilv.statiktalk.KService
-import com.github.kjetilv.statiktalk.st.source
+import com.github.kjetilv.statiktalk.processor.KMessage
+import com.github.kjetilv.statiktalk.processor.KService
+import com.github.kjetilv.statiktalk.processor.st.source
 
 internal object SenderTemplate {
 
@@ -61,5 +61,5 @@ private class 《s.service》SendMediator(
 }》}
 """.trimIndent()
 
-    internal fun source(service: KService, messages: List<KMessage>) = senderTemplate.source(service, messages)
+    fun source(service: KService, messages: List<KMessage>) = senderTemplate.source(service, messages)
 }

@@ -1,6 +1,6 @@
 @file:Suppress("unused")
 
-package com.github.kjetilv.statiktalk
+package com.github.kjetilv.statiktalk.processor
 
 import com.google.devtools.ksp.symbol.KSFile
 

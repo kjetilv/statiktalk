@@ -1,8 +1,8 @@
-package com.github.kjetilv.statiktalk.st
+package com.github.kjetilv.statiktalk.processor.st
 
-import com.github.kjetilv.statiktalk.KMessage
-import com.github.kjetilv.statiktalk.KParam
-import com.github.kjetilv.statiktalk.KService
+import com.github.kjetilv.statiktalk.processor.KMessage
+import com.github.kjetilv.statiktalk.processor.KParam
+import com.github.kjetilv.statiktalk.processor.KService
 import org.stringtemplate.v4.ST
 import java.math.BigDecimal
 import java.math.BigInteger

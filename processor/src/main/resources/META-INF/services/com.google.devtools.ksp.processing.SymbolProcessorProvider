@@ -1,1 +1,1 @@
-com.github.kjetilv.statiktalk.ProcessorProvider
+com.github.kjetilv.statiktalk.processor.spi.ProcessorProvider

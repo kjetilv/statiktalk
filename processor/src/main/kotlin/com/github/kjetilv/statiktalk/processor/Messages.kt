@@ -1,15 +1,15 @@
-package com.github.kjetilv.statiktalk
+package com.github.kjetilv.statiktalk.processor
 
 import com.github.kjetilv.statiktalk.api.Message
-import com.github.kjetilv.statiktalk.ksp.eventName
-import com.github.kjetilv.statiktalk.ksp.findAnno
-import com.github.kjetilv.statiktalk.ksp.syntheticEventName
+import com.github.kjetilv.statiktalk.processor.ksp.eventName
+import com.github.kjetilv.statiktalk.processor.ksp.findAnno
+import com.github.kjetilv.statiktalk.processor.ksp.syntheticEventName
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.*
 
-object Messages {
+internal object Messages {
 
-    internal fun Resolver.serviceMessages(contextType: KSName) = try {
+    fun Resolver.serviceMessages(contextType: KSName) = try {
         getSymbolsWithAnnotation(ANNOTATION_NAME)
             .mapNotNull { it as? KSFunctionDeclaration }
             .groupBy { declaringClass(it) }
@@ -47,7 +47,7 @@ object Messages {
         val serviceName = decl.simpleName.asString()
         val keys = valueParameters
             .let { if (contextArg != null) it.dropLast(1) else it }
-            .map(::kParam)
+            .map(Messages::kParam)
         val eventName = anno.eventName ?: anno.syntheticEventName(service, serviceName, keys)
         return KMessage(serviceName, eventName, keys, contextArg, contextNullable)
     }
