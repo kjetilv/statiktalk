@@ -51,8 +51,8 @@ private class 《s.service》SendMediator(
         《else》《endif》
     ) {
         send《if(m.contextualNullable)》0《else》1《endif》(
-            《if(m.contextual)》《m.contextArg》《else》null《endif》,
-            《if(m.eventName)》"@event_name" to "《m.eventName》",《endif》
+            ctx = 《if(m.contextual)》《m.contextArg》《else》null《endif》,
+            《if(m.eventName)》"@event_name" to "《m.eventName》"《if(m.hasKeys)》,《endif》《endif》
 《m.keys:{key|
             "《key.name》" to 《key.name》};separator=",
             "》

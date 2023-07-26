@@ -122,9 +122,14 @@ private class 《s.service》ReceiveMediator《m.upcasedServiceName》(
 }》
         《s.serviceCc》.《m.serviceName》(
 《m.keys:{key|
-            《key.name》, 
-}》《if(m.contextual)》            context(packet, context)
-        《else》《endif》        )
+            《key.name》};separator=",
+            "》《if(m.contextual)》《if(m.hasKeys)》,
+        《else》
+        《endif》
+            context(packet, context)
+        《else》
+        《endif》
+        )
     \}
 \}
 
