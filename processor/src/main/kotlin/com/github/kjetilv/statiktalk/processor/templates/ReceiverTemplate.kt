@@ -41,7 +41,7 @@ import no.nav.helse.rapids_rivers.RapidsConnection
 */
 
 fun RapidsConnection.handle《s.name》(
-    《s.name》: 《s.name》,
+    《s.nameCc》: 《s.name》,
     eventName: String? = null,
 《if(ps)》
     reqs: 《s.name》Reqs? = null,    
@@ -49,7 +49,7 @@ fun RapidsConnection.handle《s.name》(
     vararg additionalKeys: String
 ) {
 《ms:{m|
-    《s.name》ReceiveMediator《m.upcasedServiceName》(《s.name》)
+    《s.name》ReceiveMediator《m.upcasedServiceName》(《s.nameCc》)
         .listenTo(
             this,
             eventName, 
@@ -71,7 +71,7 @@ data class 《s.name》Reqs(
 《ms:{m|
 
 private class 《s.name》ReceiveMediator《m.upcasedServiceName》(
-    private val 《s.name》: 《s.name》
+    private val 《s.nameCc》: 《s.name》
 ) : ReceiveMediatorBase() {
 
     fun listenTo(
@@ -123,7 +123,7 @@ private class 《s.name》ReceiveMediator《m.upcasedServiceName》(
         val 《interestingKey.name》: 《interestingKey.type》? = 
             packet.resolve("《interestingKey.name》", JsonNode::《interestingKey.jsonType》)
 }》
-        《s.name》.《m.name》(
+        《s.nameCc》.《m.name》(
 《m.keys:{key|
             《key.name》};separator=",
             "》《if(m.contextual)》《if(m.hasKeys)》,
