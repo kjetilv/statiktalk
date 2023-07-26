@@ -16,7 +16,7 @@ package 《s.packidge》
 import 《import》
 } 》
 import com.github.kjetilv.statiktalk.api.SendMediatorBase
-import 《s.sourcePackidge》.《s.service》
+import 《s.sourcePackidge》.《s.name》
 
 import no.nav.helse.rapids_rivers.RapidsConnection
 
@@ -34,16 +34,16 @@ import no.nav.helse.rapids_rivers.RapidsConnection
     《endif》
 */
 
-fun RapidsConnection.《s.serviceCc》(eventName: String? = null): 《s.service》 =
-    《s.service》SendMediator(rapidsConnection = this, eventName = eventName)
+fun RapidsConnection.《s.nameCc》(eventName: String? = null): 《s.name》 =
+    《s.name》SendMediator(rapidsConnection = this, eventName = eventName)
 
-private class 《s.service》SendMediator(
+private class 《s.name》SendMediator(
     rapidsConnection: RapidsConnection,
     eventName: String? = null
-) : SendMediatorBase(eventName, rapidsConnection), 《s.service》 {
+) : SendMediatorBase(eventName, rapidsConnection), 《s.name》 {
 
 《ms:{m|
-    override fun 《m.serviceName》(
+    override fun 《m.name》(
 《m.keys:{key|
         《key.name》: 《key.type》《if(key.optional)》?《endif》,
         }》《if(m.contextual)

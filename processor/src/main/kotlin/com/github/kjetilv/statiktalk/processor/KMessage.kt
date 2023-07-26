@@ -5,7 +5,7 @@ package com.github.kjetilv.statiktalk.processor
 import com.github.kjetilv.statiktalk.api.Context
 
 internal data class KMessage(
-    val serviceName: String,
+    val name: String,
     val eventName: String?,
     val keys: List<KParam>,
     val contextArg: String?,
@@ -18,7 +18,7 @@ internal data class KMessage(
 
     val contextClass: String = contextClassName
 
-    val upcasedServiceName = serviceName.substring(0, 1).uppercase() + serviceName.substring(1)
+    val upcasedServiceName = name.substring(0, 1).uppercase() + name.substring(1)
 
     val hasRequiredKeys get() = requiredKeys.isNotEmpty()
 

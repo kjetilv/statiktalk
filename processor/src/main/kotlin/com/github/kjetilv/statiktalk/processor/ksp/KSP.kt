@@ -9,7 +9,7 @@ import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 
 internal fun CodeGenerator.mediatorClassFile(decl: KService, className: String) =
     createNewFile(
-        decl.containingFile
+        decl.file
             ?.let { Dependencies(true, it) }
             ?: Dependencies(true),
         decl.packidge,
@@ -20,7 +20,7 @@ internal fun CodeGenerator.mediatorClassFile(decl: KService, className: String) 
 internal val KSAnnotation.eventName get() = stringField("eventName")
 
 internal fun KSAnnotation.syntheticEventName(service: KService, serviceName: String, keys: List<KParam>) =
-    if (boolField("syntheticEventName") || keys.isEmpty()) "${service.service}_${serviceName}" else null
+    if (boolField("syntheticEventName") || keys.isEmpty()) "${service.name}_${serviceName}" else null
 
 internal fun KSAnnotation.stringField(name: String) = field(name)?.toString()?.takeUnless { it.isBlank() }
 

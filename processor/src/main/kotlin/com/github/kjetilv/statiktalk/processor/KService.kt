@@ -7,11 +7,11 @@ import com.google.devtools.ksp.symbol.KSFile
 internal data class KService(
     val sourcePackidge: String,
     val packidge: String,
-    val service: String,
-    val containingFile: KSFile?
+    val name: String,
+    val file: KSFile?
 ) {
 
-    val qualifiedService: String get() = "${packidge}.${service}"
+    val qualifiedService: String get() = "${packidge}.${name}"
 
-    val serviceCc = service.substring(0, 1).lowercase() + service.substring(1)
+    val nameCc = name.substring(0, 1).lowercase() + name.substring(1)
 }

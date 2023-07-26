@@ -25,10 +25,10 @@ internal class Processor(private val codeGenerator: CodeGenerator) : SymbolProce
     }
 
     private fun writeFiles(service: KService, messages: List<KMessage>) {
-        with(writer(service, "${service.service}SenderMediator")) {
+        with(writer(service, "${service.name}SenderMediator")) {
             println(com.github.kjetilv.statiktalk.processor.templates.SenderTemplate.source(service, messages))
         }
-        with(writer(service, "${service.service}ReceiverMediator")) {
+        with(writer(service, "${service.name}ReceiverMediator")) {
             println(com.github.kjetilv.statiktalk.processor.templates.ReceiverTemplate.source(service, messages))
         }
     }

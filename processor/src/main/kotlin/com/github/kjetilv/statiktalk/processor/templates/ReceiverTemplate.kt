@@ -16,7 +16,7 @@ package 《s.packidge》
 import 《import》
 } 》
 import com.github.kjetilv.statiktalk.api.ReceiveMediatorBase
-import 《s.sourcePackidge》.《s.service》
+import 《s.sourcePackidge》.《s.name》
 
 import com.fasterxml.jackson.databind.JsonNode
 import no.nav.helse.rapids_rivers.JsonMessage
@@ -37,16 +37,16 @@ import no.nav.helse.rapids_rivers.RapidsConnection
     《endif》
 */
 
-fun RapidsConnection.handle《s.service》(
-    《s.serviceCc》: 《s.service》,
+fun RapidsConnection.handle《s.name》(
+    《s.name》: 《s.name》,
     eventName: String? = null,
 《if(ps)》
-    reqs: 《s.service》Reqs? = null,    
+    reqs: 《s.name》Reqs? = null,    
 《endif》
     vararg additionalKeys: String
 ) {
 《ms:{m|
-    《s.service》ReceiveMediator《m.upcasedServiceName》(《s.serviceCc》)
+    《s.name》ReceiveMediator《m.upcasedServiceName》(《s.name》)
         .listenTo(
             this,
             eventName, 
@@ -58,7 +58,7 @@ fun RapidsConnection.handle《s.service》(
 }》}
 
 《if(ps)》
-data class 《s.service》Reqs(
+data class 《s.name》Reqs(
 《ps:{p|
     val 《p.name》: 《p.type》? = null};separator=",
     "》
@@ -67,15 +67,15 @@ data class 《s.service》Reqs(
 
 《ms:{m|
 
-private class 《s.service》ReceiveMediator《m.upcasedServiceName》(
-    private val 《s.serviceCc》: 《s.service》
+private class 《s.name》ReceiveMediator《m.upcasedServiceName》(
+    private val 《s.name》: 《s.name》
 ) : ReceiveMediatorBase() {
 
     fun listenTo(
         connection: RapidsConnection,
         eventName: String? = null, 
 《if(ps)》
-        reqs: 《s.service》Reqs? = null,    
+        reqs: 《s.name》Reqs? = null,    
 《endif》
         additionalKeys: List<String>
     ) {
@@ -120,7 +120,7 @@ private class 《s.service》ReceiveMediator《m.upcasedServiceName》(
         val 《interestingKey.name》: 《interestingKey.type》? = 
             packet.resolve("《interestingKey.name》", JsonNode::《interestingKey.jsonType》)
 }》
-        《s.serviceCc》.《m.serviceName》(
+        《s.name》.《m.name》(
 《m.keys:{key|
             《key.name》};separator=",
             "》《if(m.contextual)》《if(m.hasKeys)》,
