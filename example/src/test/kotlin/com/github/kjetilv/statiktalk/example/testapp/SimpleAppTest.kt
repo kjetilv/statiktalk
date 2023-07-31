@@ -90,6 +90,7 @@ internal class SimpleAppTest {
         val unauth = mutableMapOf<String, String>()
 
         val authorizedUsers = mapOf(
+            "foo41" to "012",
             "foo42" to "123",
             "kv" to "234",
             "zot" to "345"
@@ -107,18 +108,21 @@ internal class SimpleAppTest {
         val sessionDb = MemorySessionDb()
         val sessionsDao = SessionsDao(sessionDb, events::add)
 
+        val channelsReceived = mutableSetOf<String>()
+
         withRapid { rapids ->
             waitForEvent("application_ready")
             waitForEvent("application_up")
 
             rapids.handleLoginAttempt(
                 object : LoginAttempt {
-                    override fun loginAttempted(userId: String, context: Context) {
+                    override fun loginAttempted(userId: String, channel: String?, context: Context) {
+                        channelsReceived += (channel ?: "")
                         context["loginTime"] = time()
                         rapids.authorization()
                             .userLoggedIn(userId, context)
                     }
-                })
+                }, reqs = LoginAttemptReqs(channel = "website"))
 
             rapids.handleAuthorization(
                 object : Authorization {
@@ -172,10 +176,12 @@ internal class SimpleAppTest {
             rapids.handleSessions(sessionsDao)
 
             rapids.loginAttempt().apply {
-                loginAttempted("foo42")
-                loginAttempted("unknown")
-                loginAttempted("kv")
-                loginAttempted("stranger")
+                loginAttempted("foo42", "website")
+                loginAttempted("foo41", "channel0")
+                loginAttempted("unknown", "website")
+                loginAttempted("kv", "website")
+                loginAttempted("wrongchannel", "foobar")
+                loginAttempted("stranger", "website")
             }
 
             await("wait until settled")
@@ -210,6 +216,8 @@ internal class SimpleAppTest {
         assertEquals("1970-01-02", unauth["unknown"])
         assertEquals("1970-01-04", unauth["stranger"])
 
+        assertEquals(1, channelsReceived.size)
+        assertEquals("website", channelsReceived.toList()[0])
     }
 
     private fun waitForEvent(event: String): JsonNode? {

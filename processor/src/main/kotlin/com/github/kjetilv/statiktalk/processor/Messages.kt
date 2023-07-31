@@ -4,22 +4,40 @@ import com.github.kjetilv.statiktalk.api.Message
 import com.github.kjetilv.statiktalk.processor.ksp.eventName
 import com.github.kjetilv.statiktalk.processor.ksp.findAnno
 import com.github.kjetilv.statiktalk.processor.ksp.syntheticEventName
+import com.google.devtools.ksp.getDeclaredFunctions
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.*
 
 internal object Messages {
 
     fun Resolver.serviceMessages(contextType: KSName) = try {
-        getSymbolsWithAnnotation(ANNOTATION_NAME)
-            .mapNotNull { it as? KSFunctionDeclaration }
-            .groupBy { declaringClass(it) }
-            .mapKeys { (classDecl, _) -> kService(classDecl) }
-            .mapValues { (service, funDecls) ->
-                verified(funDecls).map { kMessage(service, verified(service, it), contextType) }
-            }
+        getSymbolsWithAnnotation(ANNOTATION_NAME).let { symbols ->
+            typeAnnotations(symbols, contextType) + functionAnnotations(symbols, contextType)
+        }
     } catch (e: Exception) {
         throw IllegalStateException("Failed to process messages", e)
     }
+
+    private fun functionAnnotations(symbols: Sequence<KSAnnotated>, contextType: KSName) =
+        symbols.mapNotNull { it as? KSFunctionDeclaration }
+            .groupBy { declaringClass(it) }
+            .mapKeys { (classDecl, _) -> kService(classDecl) }
+            .mapValues { (service, funDecls) ->
+                verified(funDecls).map { functionDecl ->
+                    verified(service, functionDecl).let { verifiedFunctionDecl ->
+                        kMessage(service, verifiedFunctionDecl, contextType, verifiedFunctionDecl.findAnno(ANNOTATION_SHORT_NAME))
+                    }
+                }
+            }
+
+    private fun typeAnnotations(symbols: Sequence<KSAnnotated>, contextType: KSName) =
+        symbols.mapNotNull { it as? KSClassDeclaration }
+            .associateBy(::kService)
+            .mapValues { (service, classDecl) ->
+                classDecl.getDeclaredFunctions().map { functionDecl ->
+                    kMessage(service, verified(service, functionDecl), contextType, classDecl.findAnno(ANNOTATION_SHORT_NAME))
+                }.toList()
+            }
 
     private val ANNOTATION_NAME = Message::class.java.name
 
@@ -38,8 +56,7 @@ internal object Messages {
             decl.containingFile
         )
 
-    private fun kMessage(service: KService, decl: KSFunctionDeclaration, contextType: KSName): KMessage {
-        val anno = decl.findAnno(ANNOTATION_SHORT_NAME)
+    private fun kMessage(service: KService, decl: KSFunctionDeclaration, contextType: KSName, anno: KSAnnotation): KMessage {
         val valueParameters = decl.parameters
         val lastParam = valueParameters.lastOrNull()
         val contextArg = if (isContextArg(lastParam, contextType)) lastParam?.name?.asString() else null

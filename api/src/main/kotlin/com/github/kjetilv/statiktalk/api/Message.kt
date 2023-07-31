@@ -3,12 +3,12 @@
 package com.github.kjetilv.statiktalk.api
 
 import kotlin.annotation.AnnotationRetention.SOURCE
-import kotlin.annotation.AnnotationTarget.FUNCTION
+import kotlin.annotation.AnnotationTarget.*
 
 /**
  * Mark a function as a message.
  */
-@Target(FUNCTION)
+@Target(FUNCTION, CLASS)
 @Retention(SOURCE)
 annotation class Message(
 

@@ -48,10 +48,12 @@ private class 《s.name》SendMediator(
 《ms:{m|
     override fun 《m.name》(
 《m.keys:{key|
-        《key.name》: 《key.type》《if(key.optional)》?《endif》,
-        }》《if(m.contextual)
-        》        《m.contextArg》: 《m.contextClass》《if(m.contextualNullable)》?《else》《endif》
+        《key.name》: 《key.type》《if(key.optional)》?《endif》};separator=",
+        "》《if(m.contextual)
+        》《if(m.hasKeys)》,《endif》
+        《m.contextArg》: 《m.contextClass》《if(m.contextualNullable)》?《endif》
         《else》《endif》
+
     ) {
         send《if(m.contextualNullable)》0《else》1《endif》(
             ctx = 《if(m.contextual)》《m.contextArg》《else》null《endif》,

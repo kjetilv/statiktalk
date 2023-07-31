@@ -5,6 +5,7 @@ import com.github.kjetilv.statiktalk.processor.KService
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.KSAnnotation
+import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.symbol.KSFunctionDeclaration
 
 internal fun CodeGenerator.mediatorClassFile(decl: KService, className: String) =
@@ -27,6 +28,9 @@ internal fun KSAnnotation.stringField(name: String) = field(name)?.toString()?.t
 private fun KSAnnotation.boolField(name: String) = field(name)?.let { it as? Boolean } ?: false
 
 internal fun KSFunctionDeclaration.findAnno(name: String) =
+    annotations.first { annotation -> annotation.shortName.asString() == name }
+
+internal fun KSClassDeclaration.findAnno(name: String) =
     annotations.first { annotation -> annotation.shortName.asString() == name }
 
 private fun KSAnnotation.field(name: String) = arguments.firstOrNull { it.name?.asString() == name }?.value
