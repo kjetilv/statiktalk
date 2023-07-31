@@ -92,23 +92,23 @@ allowing explicit overrides at register/send time.
 We do required values, statically as well:
 
 ```kotlin
-    rapids.handleHelloWorld(
-        helloWorld,
-        reqs = HelloWorldReqs(
-                greeting = "howdy"
-        )
+rapids.handleHelloWorld(
+    helloWorld,
+    reqs = HelloWorldReqs(
+            greeting = "howdy"
+    )
 )
 ```
 
 ### The Context
 
-A `Context` object can be passed along when the receiver sends out messages of its own. It makes sure
+A `Context` object can be passed along when the receiver sends out subsequent messages of its own. It makes sure
 all received values are included when forwarding the message, so the familiar pattern of enriching the
-message can be used.
+message is supported.
 
-For functions that initialize a message flow from the outside, the `Context` does not
-yet exist, so it can be made a nullable _last_ argument in case the receiver of the
-message wants to pass along its context.
+> For functions that initialize a message flow from the outside, the `Context` does not
+>  yet exist, so it can be made a nullable _last_ argument in case the receiver of the
+>  message wants to pass along its context.
 
 ### The innards
 
