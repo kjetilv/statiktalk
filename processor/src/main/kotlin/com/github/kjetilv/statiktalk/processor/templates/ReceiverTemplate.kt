@@ -46,17 +46,14 @@ fun RapidsConnection.handle《s.name》(
 《if(ps)》
     reqs: 《s.name》Reqs? = null,    
 《endif》
-    vararg additionalKeys: String
 ) {
 《ms:{m|
     《s.name》ReceiveMediator《m.upcasedServiceName》(《s.nameCc》)
         .listenTo(
             this,
-            eventName, 
-《if(ps)》
-            reqs,    
+            eventName《if(ps)》, 
+            reqs    
 《endif》
-            additionalKeys.toList()
         )
 }》}
 
@@ -76,11 +73,9 @@ private class 《s.name》ReceiveMediator《m.upcasedServiceName》(
 
     fun listenTo(
         connection: RapidsConnection,
-        eventName: String? = null, 
-《if(ps)》
-        reqs: 《s.name》Reqs? = null,    
+        eventName: String? = null《if(ps)》, 
+        reqs: 《s.name》Reqs? = null    
 《endif》
-        additionalKeys: List<String>
     ) {
         val requiredKeys = 《if(m.hasRequiredKeys)》listOf(《m.requiredKeys:{requiredKey|
             
@@ -109,8 +104,8 @@ private class 《s.name》ReceiveMediator《m.upcasedServiceName》(
             《else》
             requiredValues = emptyMap(), 
             《endif》
-            interestingKeys = interestingKeys,
-            additionalKeys = additionalKeys)
+            interestingKeys = interestingKeys
+        )
     \}
 
     @Suppress("RedundantNullableReturnType", "RedundantSuppression")

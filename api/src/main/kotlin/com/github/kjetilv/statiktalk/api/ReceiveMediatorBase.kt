@@ -11,18 +11,17 @@ private const val eventNameKey = "@event_name"
 abstract class ReceiveMediatorBase : River.PacketListener {
 
     protected fun RapidsConnection.listen(
-        eventName: String?,
-        requiredKeys: List<String> = emptyList(),
-        requiredValues: Map<String, Any?> = emptyMap(),
-        interestingKeys: List<String> = emptyList(),
-        additionalKeys: List<String> = emptyList()
+            eventName: String?,
+            requiredKeys: List<String> = emptyList(),
+            requiredValues: Map<String, Any?> = emptyMap(),
+            interestingKeys: List<String> = emptyList()
     ) {
         River(this).validate { message ->
             message.apply {
                 registerEventName(eventName)
                 registerRequiredKeys(requiredKeys.filter(notIn(requiredValues)))
                 registerRequiredValues(requiredValues)
-                registerInterestingKeys(interestingKeys, additionalKeys)
+                registerInterestingKeys(interestingKeys)
             }
         }.register(this@ReceiveMediatorBase)
     }
@@ -30,33 +29,33 @@ abstract class ReceiveMediatorBase : River.PacketListener {
     protected fun context(packet: JsonMessage, context: MessageContext) = DefaultContext(packet, context)
 
     protected fun <T> JsonMessage.resolveRequired(name: String, resolver: (JsonNode) -> T) =
-        resolve(name, resolver) ?: throw IllegalStateException("Not found in $this: $name")
+            resolve(name, resolver) ?: throw IllegalStateException("Not found in $this: $name")
 
     protected fun <T> JsonMessage.resolve(name: String, resolver: (JsonNode) -> T) =
-        get(name).takeUnless(JsonNode::isNull)?.let(resolver)
+            get(name).takeUnless(JsonNode::isNull)?.let(resolver)
 
-    private fun JsonMessage.registerEventName(eventName: String?) = eventName?.also {
-        requireValue(eventNameKey, it)
-    }
+    private fun JsonMessage.registerEventName(eventName: String?) =
+            eventName?.also { requireValue(eventNameKey, it) }
 
-    private fun JsonMessage.registerRequiredKeys(keys: List<String>) = keys.forEach { key ->
-        requireKey(key)
-    }
-
-    private fun JsonMessage.registerRequiredValues(requiredValues: Map<String, Any?>) =
-        requiredValues.filterValues { value -> value != null }
-            .forEach { (key, value) ->
-                when (value) {
-                    is Number -> requireValue(key, value)
-                    is Boolean -> requireValue(key, value)
-                    else -> requireValue(key, value.toString())
-                }
+    private fun JsonMessage.registerRequiredKeys(keys: List<String>) =
+            keys.forEach { key ->
+                requireKey(key)
             }
 
-    private fun JsonMessage.registerInterestingKeys(interestingKeys: List<String>, additionalKeys: List<String>) =
-        (interestingKeys + additionalKeys).forEach { key ->
-            interestedIn(key)
-        }
+    private fun JsonMessage.registerRequiredValues(requiredValues: Map<String, Any?>) =
+            requiredValues.filterValues { value -> value != null }
+                    .forEach { (key, value) ->
+                        when (value) {
+                            is Number -> requireValue(key, value)
+                            is Boolean -> requireValue(key, value)
+                            else -> requireValue(key, value.toString())
+                        }
+                    }
+
+    private fun JsonMessage.registerInterestingKeys(interestingKeys: List<String>) =
+            interestingKeys.forEach { key ->
+                interestedIn(key)
+            }
 
     private fun notIn(requiredValues: Map<String, Any?>): (String) -> Boolean = { requiredValues[it] == null }
 }
