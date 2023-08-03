@@ -92,19 +92,19 @@ internal class SimpleAppTest {
 
         // The following are the data we have on the users when the test starts
         //
-        // These are the authorized users.  They have their own numeric key.
+        // Authorized users.  They have their own numeric key.
         val authorizedUsers = mapOf(
                 "foo41" to "012",
                 "foo42" to "123",
                 "kv" to "234",
                 "zot" to "345"
         )
-        // These are the statuss for the various users
+        // Status for the various users
         val statusMap = mapOf(
                 "foo42" to "elite",
                 "kv" to "harmless"
         )
-        // These are the returning customers we know of
+        // Returning customers we know of
         val frequentCustomers = setOf("foo42")
 
         // The following is mutable state that gets updated during the test
@@ -121,9 +121,6 @@ internal class SimpleAppTest {
         val unauth = mutableMapOf<String, String>()
         // These are the channels we got messages from
         val channelsReceived = mutableSetOf<String>()
-
-        // Stores sesssion information on authorized users
-        val sessionsDao = SessionsDao(sessionDb, eventsLog::add)
 
         // Set up the app and fire some login attempts out on the bus
         withRapid { rapids ->
@@ -189,13 +186,15 @@ internal class SimpleAppTest {
                 }
             }
 
-            // Handle logins, though only for the website
+            // Handle logins, though only for the website channel
             rapids.handleLoginAttempt(
                     loginAttempted, reqs = LoginAttemptReqs(channel = "website"))
 
+            // Handle login authorization
             rapids.handleAuthorization(authorization)
-            rapids.handleUnauthorized(unauthorized)
 
+            // Handle authorizations
+            rapids.handleUnauthorized(unauthorized)
             rapids.handleAuthorizedUserEnricher(statusEnricher)
             rapids.handleAuthorizedUserEnricher(returningEnricher)
 
@@ -209,11 +208,11 @@ internal class SimpleAppTest {
                     harmlessStatusProcessor,
                     reqs = StatusProcessorReqs(status = "harmless"))
 
-            rapids.handleSessions(sessionsDao)
+            // Backend service, stores sesssion information on authorized users
+            rapids.handleSessions(SessionsDao(sessionDb, eventsLog::add))
 
-            // To start the ball rolling, we need a sender for registered login attempts
+            // To start the ball rolling, we need a sender to inject login attempt events
             val loginAttempt = rapids.loginAttempt()
-
             loginAttempt.apply {
                 loginAttempted("foo42", "website") // Authorized, elite user
                 loginAttempted("foo41", "channel0") // Authorized, but on different channel

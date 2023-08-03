@@ -1,10 +1,12 @@
 package com.github.kjetilv.statiktalk.processor.spi
 
-import com.github.kjetilv.statiktalk.processor.Messages.serviceMessages
 import com.github.kjetilv.statiktalk.api.Context
 import com.github.kjetilv.statiktalk.processor.KMessage
 import com.github.kjetilv.statiktalk.processor.KService
+import com.github.kjetilv.statiktalk.processor.Messages.serviceMessages
 import com.github.kjetilv.statiktalk.processor.ksp.mediatorClassFile
+import com.github.kjetilv.statiktalk.processor.templates.ReceiverTemplate
+import com.github.kjetilv.statiktalk.processor.templates.SenderTemplate
 import com.google.devtools.ksp.getClassDeclarationByName
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Resolver
@@ -26,10 +28,10 @@ internal class Processor(private val codeGenerator: CodeGenerator) : SymbolProce
 
     private fun writeFiles(service: KService, messages: List<KMessage>) {
         with(writer(service, "${service.name}SenderMediator")) {
-            println(com.github.kjetilv.statiktalk.processor.templates.SenderTemplate.source(service, messages))
+            println(SenderTemplate.source(service, messages))
         }
         with(writer(service, "${service.name}ReceiverMediator")) {
-            println(com.github.kjetilv.statiktalk.processor.templates.ReceiverTemplate.source(service, messages))
+            println(ReceiverTemplate.source(service, messages))
         }
     }
 

@@ -57,14 +57,12 @@ internal object Messages {
         )
 
     private fun kMessage(service: KService, decl: KSFunctionDeclaration, contextType: KSName, anno: KSAnnotation): KMessage {
-        val valueParameters = decl.parameters
-        val lastParam = valueParameters.lastOrNull()
+        val params = decl.parameters
+        val lastParam = params.lastOrNull()
         val contextArg = if (isContextArg(lastParam, contextType)) lastParam?.name?.asString() else null
         val contextNullable = contextArg == null || (lastParam?.type?.resolve()?.isMarkedNullable ?: false)
         val serviceName = decl.simpleName.asString()
-        val keys = valueParameters
-            .let { if (contextArg != null) it.dropLast(1) else it }
-            .map(Messages::kParam)
+        val keys = (if (contextArg == null) params else params.dropLast(1)).map(Messages::kParam)
         val eventName = anno.eventName ?: anno.syntheticEventName(service, serviceName, keys)
         return KMessage(serviceName, eventName, keys, contextArg, contextNullable)
     }
