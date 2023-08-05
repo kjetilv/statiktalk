@@ -10,23 +10,23 @@ microservices to enable static typing, quick navigation and reliable
 tracking of usages and implementations. Just like a statically typed
 language!
 
-Microservices can respond to different
-messages by registering implementations of the corresponding
-signatures. They can send messages by asking for an instance of a given interface to call.
+Microservices can respond to different messages by offering implementations of the corresponding
+interfaces. They can send messages by asking for an instance that performs a messages send.
 
-The general idea is to take a function signature's argument names, and map them keys in the rapids world.
-Non-nullable arguments are registered as required keys, nullable arguments are registered as interesting
-keys.  
+The general idea is to take a function signature's argument names, and map them keys in the rapids world.  
+The function's name optionally maps to the event name. Non-nullable arguments are registered as required keys, nullable arguments are registered as interesting keys.  
 
 ## Example
 
 ```kotlin
 interface HelloWorld {
+
     @Message
     fun hello(name: String, greeting: String? = null)
 }
 
 val helloWorld = object : HelloWorld {
+
     override fun hello(name: String, greeting: String?) {
         // TODO
     }
@@ -68,6 +68,7 @@ We can also use a default, synthetic event name, which will be a concatenation o
 
 ```kotlin
 interface HelloWorld {
+
     @Message(syntheticEventName = true)
     fun hello(name: String, greeting: String? = null)
 }
@@ -77,19 +78,19 @@ Or a custom one:
 
 ```kotlin
 interface HelloWorld {
+
     @Message(eventName = "socialStuff")
     fun hello(name: String, greeting: String? = null)
 }
 ```
 
-In this case, senders and implementors will agree on the common event name by default, while still
-allowing explicit overrides at register/send time.
+In this case, senders and implementors will agree on the common event name by default.  Explicit overrides at register/send time will still take precedence.
 
 ## Finer points
 
 ### Required values
 
-We do required values, statically as well:
+Required values are supported as well:
 
 ```kotlin
 rapids.handleHelloWorld(
@@ -100,15 +101,22 @@ rapids.handleHelloWorld(
 )
 ```
 
-### The Context
+### Encriching Messages: The Context
 
-A `Context` object can be passed along when the receiver sends out subsequent messages of its own. It makes sure
-all received values are included when forwarding the message, so the familiar pattern of enriching the
-message is supported.
+Out-of-band fields on the message (i.e. fields that are in the message but not in the signature) can
+be preserved by accepting a `Context` as the last parameter.  This can be passed along to a function,
+provded it also supports it. 
+
+It makes sure all received values are included when forwarding the message, so the familiar pattern of enriching the message is possible.
 
 > For functions that initialize a message flow from the outside, the `Context` does not
 >  yet exist, so it can be made a nullable _last_ argument in case the receiver of the
 >  message wants to pass along its context.
+
+### Unsupported
+
+Disallowing fields/values have no natural static counterpart, yet. Maybe a hook for adding custom 
+message validations is the best approach for fine-tuned message flow.
 
 ### The innards
 
