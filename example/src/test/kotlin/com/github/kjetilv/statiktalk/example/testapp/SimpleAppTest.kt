@@ -212,8 +212,7 @@ internal class SimpleAppTest {
             rapids.handleSessions(SessionsDao(sessionDb, eventsLog::add))
 
             // To start the ball rolling, we need a sender to inject login attempt events
-            val loginAttempt = rapids.loginAttempt()
-            loginAttempt.apply {
+            val loginAttempt = rapids.loginAttempt {
                 loginAttempted("foo42", "website") // Authorized, elite user
                 loginAttempted("foo41", "channel0") // Authorized, but on different channel
                 loginAttempted("unknown", "website") // Unauthorized user

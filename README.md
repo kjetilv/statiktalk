@@ -3,7 +3,7 @@
 Static typing on top of rapids and rivers. A paddle for when you are up creek.
 
 The things we want to type are the messages. We represent a message as
-a Kotlin function and its argument names.
+a Kotlin function and its argument names. A function corresponds to a river.
 
 Functions can be grouped in interfaces. They can then be shared between
 microservices to enable static typing, quick navigation and reliable
@@ -13,8 +13,8 @@ language!
 Microservices can respond to different messages by offering implementations of the corresponding
 interfaces. They can send messages by asking for an instance that performs a messages send.
 
-The general idea is to take a function signature's argument names, and map them keys in the rapids world.  
-The function's name optionally maps to the event name. Non-nullable arguments are registered as required keys, nullable arguments are registered as interesting keys.  
+The general idea is to take a function signature's argument names, and map them to keys in the rapids world.  
+The function's name optionally maps to the event name. Non-nullable arguments are registered as required keys, nullable arguments are registered as interesting keys.
 
 ## Example
 
@@ -40,25 +40,32 @@ To receive hellos, we can register a listener which will be invoked with any mes
 also passing along anything on the `greeting` key:
 
 ```kotlin
-    rapids.handleHelloWorld(helloWorld)
+rapids.handleHelloWorld(helloWorld)
 ```
 
 To say hello:
 
 ```kotlin
-    rapids.helloWorld().hello("Alan")
+rapids.helloWorld().hello("Alan")
+```
+Or:
+
+```kotlin
+rapids.helloWorld { 
+    hello("Alan")
+}
 ```
 
 To make it more specific, we can also register on a specific event name:
 
 ```kotlin
-    rapids.handleHelloWorld(helloWorld, eventName = "myEventName")
+rapids.handleHelloWorld(helloWorld, eventName = "myEventName")
 ```
 
 And send on an event name:
 
 ```kotlin
-    rapids.helloWorld(eventName = "myEventName").apply {
+rapids.helloWorld(eventName = "myEventName") {
     hello("Dan")
     hello("Adele")
 }
@@ -104,8 +111,7 @@ rapids.handleHelloWorld(
 ### Encriching Messages: The Context
 
 Out-of-band fields on the message (i.e. fields that are in the message but not in the signature) can
-be preserved by accepting a `Context` as the last parameter.  This can be passed along to a function,
-provded it also supports it. 
+be preserved by accepting a `Context` as the last parameter.  This can be passed along to a function, provided it also supports it. 
 
 It makes sure all received values are included when forwarding the message, so the familiar pattern of enriching the message is possible.
 
