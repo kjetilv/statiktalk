@@ -119,11 +119,6 @@ It makes sure all received values are included when forwarding the message, so t
 >  yet exist, so it can be made a nullable _last_ argument in case the receiver of the
 >  message wants to pass along its context.
 
-### Unsupported
-
-Disallowing fields/values have no natural static counterpart, yet. Maybe a hook for adding custom 
-message validations is the best approach for fine-tuned message flow.
-
 ### The innards
 
 [KSP](https://kotlinlang.org/docs/ksp-overview.html) is used to hook into the build, when my old
