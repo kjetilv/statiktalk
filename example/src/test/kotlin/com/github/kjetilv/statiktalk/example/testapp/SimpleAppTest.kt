@@ -225,8 +225,8 @@ internal class SimpleAppTest {
             // Backend service, stores sesssion information on authorized users
             rapids.handleSessions(SessionsDao(sessionDb, eventsLog::add))
 
-            // To start the ball rolling, we need a sender to inject login attempt events
-            val loginAttempt = rapids.loginAttempt {
+            // To start the ball rolling, we send out messages about some logins
+            rapids.loginAttempt {
                 loginAttempted("foo42", "website") // Authorized, elite user
                 loginAttempted("msuser", "website", browser = "msie") // Authorized user, but using msie
                 loginAttempted("foo41", "channel0") // Authorized, but on different channel
