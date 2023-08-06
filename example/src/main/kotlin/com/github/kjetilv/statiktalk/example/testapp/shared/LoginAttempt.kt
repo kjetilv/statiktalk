@@ -10,6 +10,7 @@ interface LoginAttempt {
             userId: String,
             channel: String? = null,
             browser: String? = null,
+            externalId: String? = null,
             context: Context = Context.DUMMY
     )
 }

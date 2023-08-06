@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.kjetilv.statiktalk.api.Context
+import com.github.kjetilv.statiktalk.api.Require.empty
 import com.github.kjetilv.statiktalk.api.Require.notValue
 import com.github.kjetilv.statiktalk.api.Require.value
 import com.github.kjetilv.statiktalk.example.testapp.db.MemorySessionDb
@@ -136,6 +137,7 @@ internal class SimpleAppTest {
                         userId: String,
                         channel: String?,
                         browser: String?,
+                        externalId: String?,
                         context: Context
                 ) {
                     channelsReceived += (channel ?: "")
@@ -198,8 +200,9 @@ internal class SimpleAppTest {
             rapids.handleLoginAttempt(
                     loginAttempted,
                     reqs = LoginAttemptReqs(
-                            channel = value("website"),
-                            browser = notValue("msie")
+                            channel = value("website"),  // Only accept website logins
+                            browser = notValue("msie"), // Reject dangeours browsers
+                            externalHandler = empty()          // Stay away from logins handled by others
                     ))
 
             // Handle login authorization
@@ -230,6 +233,7 @@ internal class SimpleAppTest {
                 loginAttempted("foo42", "website") // Authorized, elite user
                 loginAttempted("msuser", "website", browser = "msie") // Authorized user, but using msie
                 loginAttempted("foo41", "channel0") // Authorized, but on different channel
+                loginAttempted("foo41", "website", externalId = "42") // Authorized, but not handled by us
                 loginAttempted("unknown", "website") // Unauthorized user
                 loginAttempted("kv", "website") // Authorized user, harmless
                 loginAttempted("wrongchannel", "foobar") // Totally irrelevant user

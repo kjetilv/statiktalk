@@ -99,6 +99,7 @@ private class 《s.name》ReceiveMediator《m.upcasedServiceName》(
         connection.listen(
             eventName《if(m.eventName)》 ?: "《m.eventName》"《endif》, 
             requiredKeys,
+            interestingKeys,
             《if(ps)》
             mapOf(
 《ps:{p|
@@ -108,7 +109,6 @@ private class 《s.name》ReceiveMediator《m.upcasedServiceName》(
             《else》
             emptyMap(), 
             《endif》
-            interestingKeys,
             customs
         )
     \}
