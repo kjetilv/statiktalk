@@ -200,10 +200,12 @@ internal class SimpleAppTest {
             rapids.handleLoginAttempt(
                     loginAttempted,
                     reqs = LoginAttemptReqs(
-                            channel = value("website"),  // Only accept website logins
-                            browser = notValue("msie"), // Reject dangeours browsers
-                            externalId = empty()          // Stay away from logins handled by others
-                    ))
+                            channel = value("website"),  // Only accept website logins (require value)
+                            browser = notValue("msie"), // Reject dangeours browsers (reject value)
+                            externalId = empty()          // Stay away from logins handled by others (reject key)
+                    )) {
+                rejectKey("foobar") // Drop down to R&R for custom requirements
+            }
 
             // Handle login authorization
             rapids.handleAuthorization(authorization)
