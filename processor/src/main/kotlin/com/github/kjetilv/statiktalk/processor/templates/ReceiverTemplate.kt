@@ -103,8 +103,8 @@ private class 《s.name》ReceiveMediator《m.upcasedServiceName》(
             《if(ps)》
             mapOf(
 《ps:{p|
-                "《p.name》" to reqs?.《p.name》, 
-}》
+                "《p.name》" to reqs?.《p.name》 };separator=",
+                "》
             ),
             《else》
             emptyMap(), 

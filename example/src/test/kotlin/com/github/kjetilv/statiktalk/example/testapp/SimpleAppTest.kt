@@ -202,7 +202,7 @@ internal class SimpleAppTest {
                     reqs = LoginAttemptReqs(
                             channel = value("website"),  // Only accept website logins
                             browser = notValue("msie"), // Reject dangeours browsers
-                            externalHandler = empty()          // Stay away from logins handled by others
+                            externalId = empty()          // Stay away from logins handled by others
                     ))
 
             // Handle login authorization
