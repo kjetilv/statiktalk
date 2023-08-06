@@ -7,7 +7,6 @@ import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.MessageContext
 import java.math.BigDecimal
 
-data class DefaultContext(override val packet: JsonMessage, override val context: MessageContext) : Context
 
 interface Context {
 

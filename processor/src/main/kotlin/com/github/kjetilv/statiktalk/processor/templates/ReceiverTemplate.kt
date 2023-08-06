@@ -16,6 +16,7 @@ package 《s.packidge》
 import 《import》
 } 》
 import com.github.kjetilv.statiktalk.api.ReceiveMediatorBase
+import com.github.kjetilv.statiktalk.api.Req
 import 《s.sourcePackidge》.《s.name》
 
 import com.fasterxml.jackson.databind.JsonNode
@@ -46,21 +47,23 @@ fun RapidsConnection.handle《s.name》(
 《if(ps)》
     reqs: 《s.name》Reqs? = null,    
 《endif》
+    customs: (JsonMessage.() -> Unit)? = null
 ) {
 《ms:{m|
     《s.name》ReceiveMediator《m.upcasedServiceName》(《s.nameCc》)
         .listenTo(
             this,
-            eventName《if(ps)》, 
-            reqs    
+            eventName,《if(ps)》 
+            reqs, 
 《endif》
+            customs
         )
 }》}
 
 《if(ps)》
 data class 《s.name》Reqs(
 《ps:{p|
-    val 《p.name》: 《p.type》? = null};separator=",
+    val 《p.name》: Req<《p.type》>? = null};separator=",
     "》
 )
 《endif》
@@ -73,9 +76,10 @@ private class 《s.name》ReceiveMediator《m.upcasedServiceName》(
 
     fun listenTo(
         connection: RapidsConnection,
-        eventName: String? = null《if(ps)》, 
-        reqs: 《s.name》Reqs? = null    
+        eventName: String? = null,《if(ps)》 
+        reqs: 《s.name》Reqs? = null,
 《endif》
+        customs: (JsonMessage.() -> Unit)? = null
     ) {
         val requiredKeys = 《if(m.hasRequiredKeys)》listOf(《m.requiredKeys:{requiredKey|
             
@@ -94,17 +98,18 @@ private class 《s.name》ReceiveMediator《m.upcasedServiceName》(
         《endif》
         connection.listen(
             eventName《if(m.eventName)》 ?: "《m.eventName》"《endif》, 
-            requiredKeys = requiredKeys,
+            requiredKeys,
             《if(ps)》
-            requiredValues = mapOf(
+            mapOf(
 《ps:{p|
                 "《p.name》" to reqs?.《p.name》, 
 }》
             ),
             《else》
-            requiredValues = emptyMap(), 
+            emptyMap(), 
             《endif》
-            interestingKeys = interestingKeys
+            interestingKeys,
+            customs
         )
     \}
 

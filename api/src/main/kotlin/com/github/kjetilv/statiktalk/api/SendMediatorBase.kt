@@ -8,23 +8,23 @@ private const val eventNameKey = "@event_name"
 abstract class SendMediatorBase(private val eventName: String? = null, private val connection: RapidsConnection) {
 
     protected fun send0(ctx: Context?, vararg contents: Pair<String, Any?>) =
-        contents.toMap().also { ctx.publish(it) }
+            contents.toMap().also { ctx.publish(it) }
 
     protected fun send1(ctx: Context, vararg contents: Pair<String, Any?>) =
-        contents.toMap().also { ctx.publish(it) }
+            contents.toMap().also { ctx.publish(it) }
 
-    private fun Context?.publish(keys: Map<String, Any?>) =
-        if (this is DefaultContext) publishUpdated(keys) else publishNew(keys)
+    private fun Context?.publish(map: Map<String, Any?>) =
+            (this as? DefaultContext)?.publishUpdated(map) ?: publishNew(map)
 
-    private fun Context?.publishUpdated(keys: Map<String, Any?>) {
-        (this as? DefaultContext)?.apply {
-            keys.entries.forEach { (key, value) -> value?.also { packet[key] = it } }
-            eventName?.also { packet[eventNameKey] = it }
-            context.publish(packet.toJson())
-        }
+    private fun DefaultContext.publishUpdated(map: Map<String, Any?>) {
+        nonNullValues(map).forEach { (key, value) -> packet[key] = value }
+        eventName?.also { packet[eventNameKey] = it }
+        context.publish(packet.toJson())
     }
 
-    private fun publishNew(keys: Map<String, Any?>) = keys.filterValues { it != null }
-        .mapValues { (_, it) -> it!! }
-        .let { connection.publish(JsonMessage.newMessage(it).toJson()) }
+    private fun publishNew(map: Map<String, Any?>) =
+            nonNullValues(map).let { connection.publish(JsonMessage.newMessage(it).toJson()) }
+
+    private fun nonNullValues(keys: Map<String, Any?>) =
+            keys.filterValues { it != null }.mapValues { (_, it) -> it!! }
 }

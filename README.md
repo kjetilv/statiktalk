@@ -1,11 +1,10 @@
 # statiktalk
 
-Static typing on top of rapids and rivers. A paddle for when you are up creek.
+Static typing on top of rapids and rivers. A paddle for when you are up **** creek.
 
-The things we want to type are the messages. We represent a message as
-a Kotlin function and its argument names. A function corresponds to a river.
+We want to type the message. So we represent a message as a Kotlin function and its argument names. A function corresponds to a river.
 
-Functions can be grouped in interfaces. They can then be shared between
+In Kotlin, functions can be grouped in interfaces, which can then be shared between
 microservices to enable static typing, quick navigation and reliable
 tracking of usages and implementations. Just like a statically typed
 language!
@@ -66,8 +65,8 @@ And send on an event name:
 
 ```kotlin
 rapids.helloWorld(eventName = "myEventName") {
-    hello("Dan")
     hello("Adele")
+    hello("Dan")
 }
 ```
 
@@ -95,15 +94,16 @@ In this case, senders and implementors will agree on the common event name by de
 
 ## Finer points
 
-### Required values
+### Required/rejected values
 
-Required values are supported as well:
+Also supported:
 
 ```kotlin
 rapids.handleHelloWorld(
     helloWorld,
     reqs = HelloWorldReqs(
-            greeting = "howdy"
+        name = notValue("Bjarne"),
+        greeting = value("Davs")
     )
 )
 ```

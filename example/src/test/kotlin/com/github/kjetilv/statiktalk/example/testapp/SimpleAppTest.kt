@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.kjetilv.statiktalk.api.Context
+import com.github.kjetilv.statiktalk.api.Require.notValue
+import com.github.kjetilv.statiktalk.api.Require.value
 import com.github.kjetilv.statiktalk.example.testapp.db.MemorySessionDb
 import com.github.kjetilv.statiktalk.example.testapp.shared.*
 import com.github.kjetilv.statiktalk.example.testapp.shared.generated.*
@@ -96,6 +98,7 @@ internal class SimpleAppTest {
         val authorizedUsers = mapOf(
                 "foo41" to "012",
                 "foo42" to "123",
+                "msuser" to "999",
                 "kv" to "234",
                 "zot" to "345"
         )
@@ -129,7 +132,12 @@ internal class SimpleAppTest {
 
             // Captures and broadcasts login attempts, and records which channels they came from
             val loginAttempted = object : LoginAttempt {
-                override fun loginAttempted(userId: String, channel: String?, context: Context) {
+                override fun loginAttempted(
+                        userId: String,
+                        channel: String?,
+                        browser: String?,
+                        context: Context
+                ) {
                     channelsReceived += (channel ?: "")
                     context["loginTime"] = time()
                     rapids.authorization()
@@ -188,7 +196,11 @@ internal class SimpleAppTest {
 
             // Handle logins, though only for the website channel
             rapids.handleLoginAttempt(
-                    loginAttempted, reqs = LoginAttemptReqs(channel = "website"))
+                    loginAttempted,
+                    reqs = LoginAttemptReqs(
+                            channel = value("website"),
+                            browser = notValue("msie")
+                    ))
 
             // Handle login authorization
             rapids.handleAuthorization(authorization)
@@ -201,12 +213,14 @@ internal class SimpleAppTest {
             // Hook on to status=elite and store it
             rapids.handleStatusProcessor(
                     eliteStatusReorder,
-                    reqs = StatusProcessorReqs(status = "elite"))
+                    reqs = StatusProcessorReqs(status = value("elite")))
 
             // Hook on to status=harmless and store it
             rapids.handleStatusProcessor(
                     harmlessStatusProcessor,
-                    reqs = StatusProcessorReqs(status = "harmless"))
+                    reqs = StatusProcessorReqs(
+                            status = value("harmless"))
+            )
 
             // Backend service, stores sesssion information on authorized users
             rapids.handleSessions(SessionsDao(sessionDb, eventsLog::add))
@@ -214,6 +228,7 @@ internal class SimpleAppTest {
             // To start the ball rolling, we need a sender to inject login attempt events
             val loginAttempt = rapids.loginAttempt {
                 loginAttempted("foo42", "website") // Authorized, elite user
+                loginAttempted("msuser", "website", browser = "msie") // Authorized user, but using msie
                 loginAttempted("foo41", "channel0") // Authorized, but on different channel
                 loginAttempted("unknown", "website") // Unauthorized user
                 loginAttempted("kv", "website") // Authorized user, harmless
