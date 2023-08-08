@@ -165,22 +165,8 @@ internal class SimpleAppTest {
             }
 
             // Checks if users have a special status in the system
-            val statusEnricher = object : AuthorizedUserEnricher {
-                override fun authorized(userId: String, userKey: String) {
-                    statusMap[userId]?.also {
-                        rapids.sessions().userHasStatus(userId, userKey, it)
-                    }
-                }
-            }
 
             // Checks if this is a returning customer
-            val returningEnricher = object : AuthorizedUserEnricher {
-                override fun authorized(userId: String, userKey: String) {
-                    if (frequentCustomers.contains(userId)) {
-                        rapids.sessions().userIsReturning(userId, userKey, true)
-                    }
-                }
-            }
 
             // Records any "elite" status users authorized
             val eliteStatusReorder = object : StatusProcessor {
@@ -212,8 +198,17 @@ internal class SimpleAppTest {
 
             // Handle authorizations
             rapids.handleUnauthorized(unauthorized)
-            rapids.handleAuthorizedUserEnricher(statusEnricher)
-            rapids.handleAuthorizedUserEnricher(returningEnricher)
+
+            rapids.handleAuthorizedUserEnricher({ userId, userKey ->
+                statusMap[userId]?.also {
+                    rapids.sessions().userHasStatus(userId, userKey, it)
+                }
+            })
+            rapids.handleAuthorizedUserEnricher({ userId, userKey ->
+                if (frequentCustomers.contains(userId)) {
+                    rapids.sessions().userIsReturning(userId, userKey, true)
+                }
+            })
 
             // Hook on to status=elite and store it
             rapids.handleStatusProcessor(
@@ -297,15 +292,13 @@ internal class SimpleAppTest {
                 }) { it != null }
     }
 
-    private fun consumerProperties(): MutableMap<String, Any> {
-        return HashMap<String, Any>().apply {
-            put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.bootstrapServers)
-            put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "PLAINTEXT")
-            put(SaslConfigs.SASL_MECHANISM, "PLAIN")
-            put(ConsumerConfig.GROUP_ID_CONFIG, "test-consumer")
-            put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-        }
-    }
+    private fun consumerProperties(): Map<String, Any> = mapOf(
+            CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG to kafkaContainer.bootstrapServers,
+            CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to "PLAINTEXT",
+            SaslConfigs.SASL_MECHANISM to "PLAIN",
+            ConsumerConfig.GROUP_ID_CONFIG to "test-consumer",
+            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest"
+    )
 
     private fun createConfig(): Map<String, String> {
         val randomPort = ServerSocket(0).use { it.localPort }
