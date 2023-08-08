@@ -1,6 +1,7 @@
 package com.github.kjetilv.statiktalk.api
 
 import no.nav.helse.rapids_rivers.JsonMessage
+import no.nav.helse.rapids_rivers.JsonMessage.Companion.newMessage
 import no.nav.helse.rapids_rivers.RapidsConnection
 
 private const val eventNameKey = "@event_name"
@@ -17,13 +18,17 @@ abstract class SendMediatorBase(private val eventName: String? = null, private v
             (this as? DefaultContext)?.publishUpdated(map) ?: publishNew(map)
 
     private fun DefaultContext.publishUpdated(map: Map<String, Any?>) {
-        nonNullValues(map).forEach { (key, value) -> packet[key] = value }
-        eventName?.also { packet[eventNameKey] = it }
-        context.publish(packet.toJson())
+        nonNullValues(map).forEach { (key, value) ->
+            packet[key] = value
+        }
+        context.publish(applyEventName(packet).toJson())
     }
 
     private fun publishNew(map: Map<String, Any?>) =
-            nonNullValues(map).let { connection.publish(JsonMessage.newMessage(it).toJson()) }
+            applyEventName(newMessage(nonNullValues(map))).toJson().run(connection::publish)
+
+    private fun applyEventName(jsonMessage: JsonMessage) =
+            jsonMessage.also { eventName?.also { eventName -> it[eventNameKey] = eventName } }
 
     private fun nonNullValues(keys: Map<String, Any?>) =
             keys.filterValues { it != null }.mapValues { (_, it) -> it!! }
