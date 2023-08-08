@@ -199,6 +199,7 @@ internal class SimpleAppTest {
             // Handle authorizations
             rapids.handleUnauthorized(unauthorized)
 
+            // Using this style isn't picked up by IDEA as an implementation it will find – yet
             rapids.handleAuthorizedUserEnricher({ userId, userKey ->
                 statusMap[userId]?.also {
                     rapids.sessions().userHasStatus(userId, userKey, it)
