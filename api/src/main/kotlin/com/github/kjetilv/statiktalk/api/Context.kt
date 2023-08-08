@@ -3,8 +3,10 @@
 package com.github.kjetilv.statiktalk.api
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.node.*
 import no.nav.helse.rapids_rivers.JsonMessage
 import no.nav.helse.rapids_rivers.MessageContext
+import no.nav.helse.rapids_rivers.isMissingOrNull
 import java.math.BigDecimal
 
 
@@ -29,21 +31,35 @@ interface Context {
 
     operator fun set(key: String, value: BigDecimal) { packet[key] = value }
 
-    fun getString(key: String) = get(key)?.textValue()
+    operator fun get(key: String) =
+            node(key)?.let {
+                when (it) {
+                    is TextNode -> it.textValue()
+                    is BooleanNode -> it.booleanValue()
+                    is BigIntegerNode -> it.bigIntegerValue()
+                    is DecimalNode -> it.decimalValue()
+                    is NumericNode -> it.numberValue()
+                    is NullNode, is MissingNode -> null
+                    else ->
+                        throw IllegalStateException("$key has unsupported node type: " + it.nodeType)
+                }
+            }
 
-    fun getInt(key: String) = get(key)?.intValue()
+    fun getString(key: String) = node(key)?.textValue()
 
-    fun getLong(key: String) = get(key)?.longValue()
+    fun getInt(key: String) = node(key)?.intValue()
 
-    fun getFloat(key: String) = get(key)?.floatValue()
+    fun getLong(key: String) = node(key)?.longValue()
 
-    fun isTrue(key: String) = get(key)?.booleanValue()
+    fun getFloat(key: String) = node(key)?.floatValue()
 
-    fun getDouble(key: String) = get(key)?.doubleValue()
+    fun isTrue(key: String) = node(key)?.booleanValue()
 
-    fun getBigDecimal(key: String) = get(key)?.decimalValue()
+    fun getDouble(key: String) = node(key)?.doubleValue()
 
-    fun getBigInteger(key: String) = get(key)?.bigIntegerValue()
+    fun getBigDecimal(key: String) = node(key)?.decimalValue()
 
-    private fun get(key: String): JsonNode? = packet[key].takeUnless { it.isNull }
+    fun getBigInteger(key: String) = node(key)?.bigIntegerValue()
+
+    private fun node(key: String): JsonNode? = packet[key].takeUnless { it.isMissingOrNull() }
 }
