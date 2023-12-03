@@ -15,4 +15,6 @@ internal data class KParam(val name: String, val type: String, val optional: Boo
         "boolean", "kotlin.Boolean", "Boolean", "java.lang.Boolean" -> "booleanValue"
         else -> throw IllegalStateException("Unsupported type for parameter $name: $type")
     }
+
+    override fun toString() = "$name:$type${if (optional) "?" else ""}"
 }

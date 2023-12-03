@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     kotlin("jvm")
 }
@@ -14,7 +12,7 @@ dependencies {
 }
 
 kotlin {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
+    jvmToolchain {
+        this.languageVersion.set(JavaLanguageVersion.of(17))
     }
 }

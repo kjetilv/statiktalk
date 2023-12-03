@@ -27,6 +27,15 @@ internal data class KMessage(
     val requiredKeys get() = keys.filterNot(KParam::optional)
 
     val interestingKeys get() = keys.filter(KParam::optional)
+
+    override fun toString() =
+        "$name/$eventName${
+            keys.ifEmpty { "[]]" }
+        }${
+            if(contextualNullable) " nullable" else ""
+        }${
+            contextArg?.let { " $it" } ?: ""
+        }"
 }
 
 private val contextClassName = Context::class.java.name

@@ -14,4 +14,5 @@ internal data class KService(
     val qualifiedService: String get() = "${packidge}.${name}"
 
     val nameCc = name.substring(0, 1).lowercase() + name.substring(1)
+    override fun toString() = "$packidge.$name"
 }

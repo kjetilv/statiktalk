@@ -4,7 +4,7 @@ import com.github.kjetilv.statiktalk.api.Context
 import com.github.kjetilv.statiktalk.processor.KMessage
 import com.github.kjetilv.statiktalk.processor.KService
 import com.github.kjetilv.statiktalk.processor.Messages.serviceMessages
-import com.github.kjetilv.statiktalk.processor.ksp.mediatorClassFile
+import com.github.kjetilv.statiktalk.processor.mediatorClassFile
 import com.github.kjetilv.statiktalk.processor.templates.ReceiverTemplate
 import com.github.kjetilv.statiktalk.processor.templates.SenderTemplate
 import com.google.devtools.ksp.getClassDeclarationByName

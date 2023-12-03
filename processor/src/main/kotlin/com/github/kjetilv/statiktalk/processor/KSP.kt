@@ -1,7 +1,5 @@
-package com.github.kjetilv.statiktalk.processor.ksp
+package com.github.kjetilv.statiktalk.processor
 
-import com.github.kjetilv.statiktalk.processor.KParam
-import com.github.kjetilv.statiktalk.processor.KService
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.symbol.KSAnnotation

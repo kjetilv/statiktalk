@@ -1,9 +1,6 @@
 package com.github.kjetilv.statiktalk.processor
 
 import com.github.kjetilv.statiktalk.api.Message
-import com.github.kjetilv.statiktalk.processor.ksp.eventName
-import com.github.kjetilv.statiktalk.processor.ksp.findAnno
-import com.github.kjetilv.statiktalk.processor.ksp.syntheticEventName
 import com.google.devtools.ksp.getDeclaredFunctions
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.symbol.*
