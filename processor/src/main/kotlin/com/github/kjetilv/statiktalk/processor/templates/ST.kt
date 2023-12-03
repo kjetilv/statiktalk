@@ -22,25 +22,31 @@ internal fun String.source(service: KService, messages: List<KMessage>) =
 private fun adorn(code: String) =
     code.split("\n").let { lines ->
         lines.maxOf { it.length }.let { maxLength ->
-            lines.map { line -> suffixed(line, maxLength) }.framed(maxLength).joinToString("\n")
+            lines.mapIndexed { i, line -> suffixed(i, line, maxLength) }
+                .framed(maxLength).joinToString("\n")
         }
     }
 
-private const val PRE = "/* statictalk */ "
+private const val STATICTALK = "statictalk "
+
+private const val PRE = "/* $STATICTALK */ "
 
 private const val POST = " // DO NOT TOUCH"
 
+private fun suffixed(index: Int, line: String, maxLength: Int) =
+    (maxLength - line.length).let { buffer ->
+        PRE.replace(STATICTALK, shuffled(index, STATICTALK)) + line + " ".repeat(buffer) + POST
+    }
+
 private fun List<String>.framed(maxLength: Int) =
     maxOf(0, maxLength + PRE.length + POST.length - 6).let { length ->
-        ("/* " + "-".repeat(length) + " */").let { frame ->
+        ("/* " + "–".repeat(length) + " */").let { frame ->
             listOf(frame) + this + listOf(frame)
         }
     }
 
-private fun suffixed(line: String, maxLength: Int) =
-    (maxLength - line.length).let { buffer ->
-        PRE + line + " ".repeat(buffer) + POST
-    }
+fun shuffled(index: Int, str: String) =
+    str.substring(index % str.length) + str.substring(0, index % str.length)
 
 private fun imports(messages: List<KMessage>) =
     messages.flatMap { message -> message.keys.map { key -> key.type } }
