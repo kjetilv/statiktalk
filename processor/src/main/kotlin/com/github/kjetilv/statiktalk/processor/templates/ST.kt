@@ -11,6 +11,7 @@ import java.awt.image.BufferedImage
 import java.math.BigDecimal
 import java.math.BigInteger
 import kotlin.math.max
+import kotlin.math.roundToInt
 
 
 internal fun String.source(service: KService, messages: List<KMessage>) =
@@ -23,42 +24,67 @@ internal fun String.source(service: KService, messages: List<KMessage>) =
         }.render()
     } catch (e: Exception) {
         throw IllegalStateException("Failed to render $service, ${messages.size} messages", e)
-    }.trim().let(::adorn).let(::bg)
+    }.trim().let(::adorn).let { bg(service, it) }
 
-private fun bg(code: String) =
+private fun bg(service: KService, code: String) =
     code.split("\n").let { lines ->
         lines.indexOfFirst { line -> line.startsWith("@file") }
             .let { header ->
+
                 val rightMargin = lines.map { it.indexOf(" */ // DO NOT TOUCH") }.first { it > 0 }
                 val leftMargin = PRE.length
-                val width = rightMargin - leftMargin
-                val height = lines.size - header - 1
-                val img = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
-                val graphics = img.graphics as Graphics2D
-                graphics.font = graphics.font.deriveFont(30f)
-                graphics.setRenderingHint(
-                    RenderingHints.KEY_TEXT_ANTIALIASING,
-                    RenderingHints.VALUE_TEXT_ANTIALIAS_ON
-                )
-                graphics.drawString("statictalk", 1, height - 1)
-                graphics.dispose()
-                img.flush()
 
-                lines.mapIndexed { y, line ->
-                    line.toCharArray().mapIndexed { x, c ->
-                        if (
-                            c == '`' &&
-                            x in leftMargin..(leftMargin + width) &&
-                            y in header..(header + height) &&
-                            img.getRGB(x - leftMargin, y - header) != -16777216
+                val textWidth = rightMargin - leftMargin
+                val textHeight = lines.size - header - 1
+
+                val textShift = (textWidth * 0.4).roundToInt()
+                val lineHeader = PRE.length + textShift
+
+                val set: (Int, Int) -> Boolean = service.imgFun(textHeight, textWidth, textShift)
+
+                lines.mapIndexed { textY, line ->
+                    line.toCharArray().mapIndexed { textX, c ->
+                        if (c == '`' &&
+                            textX in lineHeader..<(leftMargin + textWidth) &&
+                            textY in header..<(header + textHeight)
                         )
-                            'x'
+                            if (set(textY - header, textX - lineHeader))
+                                'x'
+                            else
+                                '.'
                         else
                             c
                     }.joinToString("")
                 }.joinToString("\n")
             }
     }
+
+private fun KService.imgFun(
+    textHeight: Int,
+    textWidth: Int,
+    textShift: Int
+): (Int, Int) -> Boolean {
+    val imgWidth = textHeight
+    val imgHeight = textWidth - textShift
+
+    val img = BufferedImage(imgWidth * 2, imgHeight, BufferedImage.TYPE_INT_RGB)
+    val graphics = img.graphics as Graphics2D
+    graphics.font = Font("Monospaced", Font.ITALIC, (imgHeight * 0.8f).roundToInt())
+    graphics.setRenderingHint(
+        RenderingHints.KEY_TEXT_ANTIALIASING,
+        RenderingHints.VALUE_TEXT_ANTIALIAS_ON
+    )
+    graphics.drawString(name, (imgWidth * 0.2).roundToInt(), (imgHeight * 0.8).roundToInt())
+    graphics.dispose()
+    img.flush()
+
+    return { x: Int, y: Int ->
+        if (x >= imgWidth || y >= imgHeight) {
+            throw IllegalArgumentException("$x >= $imgWidth || $y >= $imgHeight")
+        }
+        img.getRGB(x * 2, imgHeight - 1 - y) != -16777216
+    }
+}
 
 private fun adorn(code: String) =
     code.split("\n")
@@ -69,7 +95,7 @@ private fun adorn(code: String) =
                     lines.maxOf { it.length }
                         .let { len -> (len * 1.1).toInt() }
                         .let { len ->
-                            lines.neighborhoods(0)
+                            lines.neighborhoods(1)
                                 .mapIndexed { i, group -> i to group }
                                 .map { (index, group) ->
                                     group.let { (line, neighbors) ->
