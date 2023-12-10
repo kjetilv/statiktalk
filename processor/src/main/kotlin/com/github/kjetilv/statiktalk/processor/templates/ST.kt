@@ -32,7 +32,7 @@ private fun adorn(code: String) =
                             lines.mapIndexed { i, line ->
                                 suffixed(i, line, len, header)
                             }
-                                .framed(len)
+                                .framed()
                         }
                         .joinToString("\n")
 
@@ -67,16 +67,12 @@ private fun emptySpace(
     else line.endsWith(" ").let { spaced ->
         (if (spaced) 6 else 7).let { preamble ->
             if (buffer in 0..preamble) " ".repeat(buffer)
-            else (if (spaced) "" else " ") + "/* ${" ".repeat(buffer - preamble)} */"
+            else (if (spaced) "" else " ") + "/* ${"`".repeat(buffer - preamble)} */"
         }
     }
 
-private fun List<String>.framed(maxLength: Int) =
-    maxOf(0, maxLength + PRE.length + POST.length - 6).let { length ->
-        ("/* " + "–".repeat(length) + " */").let { frame ->
-            listOf("// @formatter:off") + listOf(frame) + this + listOf(frame) + listOf("// @formatter:on")
-        }
-    }
+private fun List<String>.framed() =
+    listOf("// @formatter:off") + this + listOf("// @formatter:on")
 
 fun shuffled(index: Int, str: String, preamble: Int, inHeader: Boolean) =
     (index % str.length).let { pos ->
