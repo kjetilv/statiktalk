@@ -29,9 +29,13 @@ private fun adorn(code: String) =
                     lines.maxOf { it.length }
                         .let { len -> (len * 1.1).toInt() }
                         .let { len ->
-                            lines.mapIndexed { i, line ->
-                                suffixed(i, line, len, header)
-                            }
+                            lines.neighborhoods(5)
+                                .mapIndexed { i, group -> i to group }
+                                .map { (index, group) ->
+                                    group.let { (line, neighbors) ->
+                                        suffixed(index, line, neighbors, len, header)
+                                    }
+                                }
                                 .framed()
                         }
                         .joinToString("\n")
@@ -39,13 +43,18 @@ private fun adorn(code: String) =
                 }
         }
 
+private fun <E> List<E>.neighborhoods(neighbors: Int): List<Pair<E, List<E>>> =
+    mapIndexed { i, line ->
+        line to subList(maxOf(0, i - neighbors), minOf(size, i + neighbors))
+    }
+
 private const val STATICTALK = "statictalk "
 
 private const val PRE = "/* $STATICTALK */ "
 
 private const val POST = " // DO NOT TOUCH"
 
-private fun suffixed(index: Int, line: String, maxLength: Int, header: Int) =
+private fun suffixed(index: Int, line: String, neighbors: List<String>, maxLength: Int, header: Int) =
     (maxLength - line.length).let { buffer ->
         max(0, line.takeWhile(Char::isWhitespace).length).let { preamble ->
             (header > index).let { inHeader ->
@@ -57,6 +66,9 @@ private fun suffixed(index: Int, line: String, maxLength: Int, header: Int) =
             }
         }
     }
+
+private fun avgLength(line: String, neighbors: List<String>): Int =
+    minOf(line.length, neighbors.map(String::length).average().toInt())
 
 private fun emptySpace(
     line: String,
