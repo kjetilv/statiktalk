@@ -38,4 +38,4 @@ internal data class KMessage(
         }"
 }
 
-private val contextClassName = Context::class.java.name
+private val contextClassName = Context::class.java.simpleName

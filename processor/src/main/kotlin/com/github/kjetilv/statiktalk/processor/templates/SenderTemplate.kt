@@ -23,20 +23,27 @@ internal object SenderTemplate {
     Service: 
       《s》
 */
-@file:Suppress(names = ["unused", "UNUSED_PARAMETER", "KotlinRedundantDiagnosticSuppress"])
+@file:Suppress(names = ["ALL", "UnusedImport", "unused", "RemoveExplicitTypeArguments"])
 
 package 《s.packidge》
 
 《imports:{import|
 import 《import》
 } 》
+import com.github.kjetilv.statiktalk.api.Context
 import com.github.kjetilv.statiktalk.api.SendMediatorBase
 import 《s.sourcePackidge》.《s.name》
 
 import no.nav.helse.rapids_rivers.RapidsConnection
 
-fun RapidsConnection.《s.nameCc》(eventName: String? = null, action: (《s.name》.() -> Unit)? = null): 《s.name》 =
-    《s.name》SendMediator(rapidsConnection = this, eventName = eventName).apply {
+fun RapidsConnection.《s.nameCc》(
+    eventName: String? = null, 
+    action: (《s.name》.() -> Unit)? = null
+): 《s.name》 =
+    《s.name》SendMediator(
+        rapidsConnection = this,
+        eventName = eventName
+    ).apply {
         action?.invoke(this)
     }
 

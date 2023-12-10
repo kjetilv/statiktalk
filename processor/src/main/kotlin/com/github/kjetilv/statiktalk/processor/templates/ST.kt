@@ -29,7 +29,7 @@ private fun adorn(code: String) =
                     lines.maxOf { it.length }
                         .let { len -> (len * 1.1).toInt() }
                         .let { len ->
-                            lines.neighborhoods(5)
+                            lines.neighborhoods(2)
                                 .mapIndexed { i, group -> i to group }
                                 .map { (index, group) ->
                                     group.let { (line, neighbors) ->
@@ -60,28 +60,38 @@ private fun suffixed(index: Int, line: String, neighbors: List<String>, maxLengt
             (header > index).let { inHeader ->
                 shuffled(index, STATICTALK, preamble, inHeader).let { shuffled ->
                     (if (inHeader) line else line.substring(preamble)).let { remainingLine ->
-                        PRE.replace(STATICTALK, shuffled) + remainingLine + emptySpace(line, buffer, inHeader) + POST
+                        PRE.replace(STATICTALK, shuffled) + remainingLine + emptySpace(
+                            line,
+                            neighbors,
+                            buffer,
+                            inHeader
+                        ) + POST
                     }
                 }
             }
         }
     }
 
-private fun avgLength(line: String, neighbors: List<String>): Int =
-    minOf(line.length, neighbors.map(String::length).average().toInt())
-
 private fun emptySpace(
     line: String,
+    neighbors: List<String>,
     buffer: Int,
     inHeader: Boolean
 ) =
     if (inHeader) " ".repeat(buffer)
     else line.endsWith(" ").let { spaced ->
         (if (spaced) 6 else 7).let { preamble ->
-            if (buffer in 0..preamble) " ".repeat(buffer)
-            else (if (spaced) "" else " ") + "/* ${"`".repeat(buffer - preamble)} */"
+            if (buffer in 0..preamble)
+                " ".repeat(buffer)
+            else {
+                val shift = maxOf(0, avgLength(line, neighbors) - line.length)
+                val commentLength = buffer - preamble
+                (if (spaced) "" else " ") + " ".repeat(shift) + "/* ${"`".repeat(commentLength - shift)} */"
+            }
         }
     }
+
+private fun avgLength(line: String, neighbors: List<String>): Int = neighbors.map(String::length).average().toInt()
 
 private fun List<String>.framed() =
     listOf("// @formatter:off") + this + listOf("// @formatter:on")

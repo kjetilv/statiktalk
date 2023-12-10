@@ -23,7 +23,7 @@ internal object ReceiverTemplate {
     Service: 
       《s》
 */
-@file:Suppress(names = ["unused", "UNUSED_PARAMETER", "KotlinRedundantDiagnosticSuppress", "UnusedImport"])
+@file:Suppress(names = ["ALL", "UnusedImport", "unused", "RemoveExplicitTypeArguments"])
 
 package 《s.packidge》
 
@@ -109,7 +109,6 @@ private class 《s.name》ReceiveMediator《m.upcasedServiceName》(
         )
     \}
 
-    @Suppress(names = ["RedundantNullableReturnType", "RedundantSuppression"])
     override fun onPacket(packet: JsonMessage, context: MessageContext) {
 《m.requiredKeys:{requiredKey|
         val 《requiredKey.name》: 《requiredKey.type》 = 
