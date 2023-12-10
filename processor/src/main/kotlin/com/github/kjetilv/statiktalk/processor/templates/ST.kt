@@ -4,9 +4,14 @@ import com.github.kjetilv.statiktalk.processor.KMessage
 import com.github.kjetilv.statiktalk.processor.KParam
 import com.github.kjetilv.statiktalk.processor.KService
 import org.stringtemplate.v4.ST
+import java.awt.Font
+import java.awt.Graphics2D
+import java.awt.RenderingHints
+import java.awt.image.BufferedImage
 import java.math.BigDecimal
 import java.math.BigInteger
 import kotlin.math.max
+
 
 internal fun String.source(service: KService, messages: List<KMessage>) =
     try {
@@ -18,7 +23,42 @@ internal fun String.source(service: KService, messages: List<KMessage>) =
         }.render()
     } catch (e: Exception) {
         throw IllegalStateException("Failed to render $service, ${messages.size} messages", e)
-    }.trim().let { adorn(it) }
+    }.trim().let(::adorn).let(::bg)
+
+private fun bg(code: String) =
+    code.split("\n").let { lines ->
+        lines.indexOfFirst { line -> line.startsWith("@file") }
+            .let { header ->
+                val rightMargin = lines.map { it.indexOf(" */ // DO NOT TOUCH") }.first { it > 0 }
+                val leftMargin = PRE.length
+                val width = rightMargin - leftMargin
+                val height = lines.size - header - 1
+                val img = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+                val graphics = img.graphics as Graphics2D
+                graphics.font = graphics.font.deriveFont(30f)
+                graphics.setRenderingHint(
+                    RenderingHints.KEY_TEXT_ANTIALIASING,
+                    RenderingHints.VALUE_TEXT_ANTIALIAS_ON
+                )
+                graphics.drawString("statictalk", 1, height - 1)
+                graphics.dispose()
+                img.flush()
+
+                lines.mapIndexed { y, line ->
+                    line.toCharArray().mapIndexed { x, c ->
+                        if (
+                            c == '`' &&
+                            x in leftMargin..(leftMargin + width) &&
+                            y in header..(header + height) &&
+                            img.getRGB(x - leftMargin, y - header) != -16777216
+                        )
+                            'x'
+                        else
+                            c
+                    }.joinToString("")
+                }.joinToString("\n")
+            }
+    }
 
 private fun adorn(code: String) =
     code.split("\n")
@@ -29,7 +69,7 @@ private fun adorn(code: String) =
                     lines.maxOf { it.length }
                         .let { len -> (len * 1.1).toInt() }
                         .let { len ->
-                            lines.neighborhoods(2)
+                            lines.neighborhoods(0)
                                 .mapIndexed { i, group -> i to group }
                                 .map { (index, group) ->
                                     group.let { (line, neighbors) ->
@@ -39,7 +79,6 @@ private fun adorn(code: String) =
                                 .framed()
                         }
                         .joinToString("\n")
-
                 }
         }
 
@@ -84,14 +123,14 @@ private fun emptySpace(
             if (buffer in 0..preamble)
                 " ".repeat(buffer)
             else {
-                val shift = maxOf(0, avgLength(line, neighbors) - line.length)
+                val shift = maxOf(0, avgLength(neighbors) - line.length)
                 val commentLength = buffer - preamble
                 (if (spaced) "" else " ") + " ".repeat(shift) + "/* ${"`".repeat(commentLength - shift)} */"
             }
         }
     }
 
-private fun avgLength(line: String, neighbors: List<String>): Int = neighbors.map(String::length).average().toInt()
+private fun avgLength(neighbors: List<String>): Int = neighbors.map(String::length).average().toInt()
 
 private fun List<String>.framed() =
     listOf("// @formatter:off") + this + listOf("// @formatter:on")
