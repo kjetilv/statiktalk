@@ -134,5 +134,5 @@ private class 《s.name》ReceiveMediator《m.upcasedServiceName》(
 }》
 """.trimIndent()
 
-    fun source(service: KService, messages: List<KMessage>) = receiverTemplate.source(service, messages)
+    fun source(service: KService, messages: List<KMessage>) = receiverTemplate.source("rec", service, messages)
 }

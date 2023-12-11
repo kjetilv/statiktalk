@@ -8,13 +8,19 @@ import java.awt.Font
 import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.awt.image.BufferedImage
+import java.io.File
 import java.math.BigDecimal
 import java.math.BigInteger
+import javax.imageio.ImageIO
 import kotlin.math.max
 import kotlin.math.roundToInt
 
 
-internal fun String.source(service: KService, messages: List<KMessage>) =
+internal fun String.source(
+    type: String,
+    service: KService,
+    messages: List<KMessage>
+) =
     try {
         ST(this, '《', '》').apply {
             add("s", service)
@@ -24,34 +30,34 @@ internal fun String.source(service: KService, messages: List<KMessage>) =
         }.render()
     } catch (e: Exception) {
         throw IllegalStateException("Failed to render $service, ${messages.size} messages", e)
-    }.trim().let(::adorn).let { bg(service, it) }
+    }.trim().let(::adorn).let { bg(type, service, it) }
 
-private fun bg(service: KService, code: String) =
+private fun bg(type: String, service: KService, code: String) =
     code.split("\n").let { lines ->
-        lines.indexOfFirst { line -> line.startsWith("@file") }
-            .let { header ->
+        lines.indexOfFirst { line -> line.contains(" @file:Suppress") }
+            .let { fileHeader ->
 
                 val rightMargin = lines.map { it.indexOf(" */ // DO NOT TOUCH") }.first { it > 0 }
                 val leftMargin = PRE.length
 
                 val textWidth = rightMargin - leftMargin
-                val textHeight = lines.size - header - 1
+                val textHeight = lines.size - fileHeader - 1
 
-                val textShift = (textWidth * 0.4).roundToInt()
+                val textShift = (textWidth * 0.5).roundToInt()
                 val lineHeader = PRE.length + textShift
 
-                val set: (Int, Int) -> Boolean = service.imgFun(textHeight, textWidth, textShift)
+                val set: (Int, Int) -> Boolean = service.imgFun(type, textHeight, textWidth, textShift, 3)
 
                 lines.mapIndexed { textY, line ->
                     line.toCharArray().mapIndexed { textX, c ->
                         if (c == '`' &&
                             textX in lineHeader..<(leftMargin + textWidth) &&
-                            textY in header..<(header + textHeight)
+                            textY in fileHeader..<(fileHeader + textHeight)
                         )
-                            if (set(textY - header, textX - lineHeader))
+                            if (set(textY - fileHeader, textX - lineHeader))
                                 'x'
                             else
-                                '.'
+                                '-'
                         else
                             c
                     }.joinToString("")
@@ -60,33 +66,46 @@ private fun bg(service: KService, code: String) =
     }
 
 private fun KService.imgFun(
+    type: String,
     textHeight: Int,
     textWidth: Int,
-    textShift: Int
+    textShift: Int,
+    squeeze: Int = 1
 ): (Int, Int) -> Boolean {
     val imgWidth = textHeight
     val imgHeight = textWidth - textShift
 
-    val img = BufferedImage(imgWidth * 2, imgHeight, BufferedImage.TYPE_INT_RGB)
-    val graphics = img.graphics as Graphics2D
-    graphics.font = Font("Monospaced", Font.ITALIC, (imgHeight * 0.8f).roundToInt())
-    graphics.setRenderingHint(
+    val img = BufferedImage(imgWidth * squeeze, imgHeight, BufferedImage.TYPE_INT_RGB)
+    val g2d = img.graphics as Graphics2D
+    g2d.font = properHeightFont(g2d, name, imgHeight)
+    g2d.setRenderingHint(
         RenderingHints.KEY_TEXT_ANTIALIASING,
         RenderingHints.VALUE_TEXT_ANTIALIAS_ON
     )
-    graphics.drawString(name, (imgWidth * 0.2).roundToInt(), (imgHeight * 0.8).roundToInt())
-    graphics.dispose()
+    g2d.drawString(name, 1, (imgHeight * .8).roundToInt())
+    g2d.dispose()
     img.flush()
+
+//    ImageIO.write(img, "png", File("${System.getProperty("user.home")}/Downloads/$name-$type.png"))
 
     return { x: Int, y: Int ->
         if (x >= imgWidth || y >= imgHeight) {
             throw IllegalArgumentException("$x >= $imgWidth || $y >= $imgHeight")
         }
-        img.getRGB(x * 2, imgHeight - 1 - y) != -16777216
+        img.getRGB(x * squeeze, imgHeight - 1 - y) != -16777216
     }
 }
 
-private fun adorn(code: String) =
+private fun properHeightFont(g2d: Graphics2D, name: String, imgHeight: Int) =
+    generateSequence(20) { size ->
+        size + 1
+    }.map { size ->
+        Font(Font.SANS_SERIF, Font.PLAIN, size)
+    }.takeWhile { font ->
+        g2d.getFontMetrics(font).getStringBounds(name, g2d).height < imgHeight
+    }.last()
+
+private fun adorn(code: String): String =
     code.split("\n")
         .map { it.trimEnd() }
         .let { lines ->
@@ -95,8 +114,10 @@ private fun adorn(code: String) =
                     lines.maxOf { it.length }
                         .let { len -> (len * 1.1).toInt() }
                         .let { len ->
-                            lines.neighborhoods(1)
-                                .mapIndexed { i, group -> i to group }
+                            lines.neighborhoods(0)
+                                .mapIndexed { i, group ->
+                                    i to group
+                                }
                                 .map { (index, group) ->
                                     group.let { (line, neighbors) ->
                                         suffixed(index, line, neighbors, len, header)

@@ -73,5 +73,5 @@ private class 《s.name》SendMediator(
 }》}
 """.trimIndent()
 
-    fun source(service: KService, messages: List<KMessage>) = senderTemplate.source(service, messages)
+    fun source(service: KService, messages: List<KMessage>) = senderTemplate.source("snd", service, messages)
 }
