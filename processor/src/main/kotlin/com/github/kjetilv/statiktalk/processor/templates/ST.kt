@@ -32,37 +32,47 @@ internal fun String.source(
         throw IllegalStateException("Failed to render $service, ${messages.size} messages", e)
     }.trim().let(::adorn).let { bg(type, service, it) }
 
+private const val MAIN = '#'
+
+private const val DROP = '|'
+
+private const val BACK = '-'
+
+private const val ZAXS = '`'
+
 private fun bg(type: String, service: KService, code: String) =
     code.split("\n").let { lines ->
-        lines.indexOfFirst { line -> line.contains(" @file:Suppress") }
-            .let { fileHeader ->
+        lines.indexOfFirst(::codeStart).let { fileHeader ->
 
-                val rightMargin = lines.map { it.indexOf(" */ // DO NOT TOUCH") }.first { it > 0 }
-                val leftMargin = PRE.length
+            val rightMargin = lines.map { it.indexOf(" */ // DO NOT TOUCH") }.first { it > 0 }
+            val leftMargin = PRE.length
 
-                val textWidth = rightMargin - leftMargin
-                val textHeight = lines.size - fileHeader - 1
+            val textWidth = rightMargin - leftMargin
+            val textHeight = lines.size - fileHeader - 1
 
-                val textShift = (textWidth * 0.5).roundToInt()
-                val lineHeader = PRE.length + textShift
+            val textShift = (textWidth * 0.4).roundToInt()
+            val lineHeader = PRE.length + textShift
 
-                val set: (Int, Int) -> Boolean = service.imgFun(type, textHeight, textWidth, textShift, 3)
+            val set: (Int, Int) -> Boolean = service.imgFun(type, textHeight, textWidth, textShift, 4)
 
-                lines.mapIndexed { textY, line ->
-                    line.toCharArray().mapIndexed { textX, c ->
-                        if (c == '`' &&
-                            textX in lineHeader..<(leftMargin + textWidth) &&
-                            textY in fileHeader..<(fileHeader + textHeight)
-                        )
-                            if (set(textY - fileHeader, textX - lineHeader))
-                                'x'
+            lines.mapIndexed { textY, line ->
+                line.toCharArray().mapIndexed { textX, c ->
+                    if (c == ZAXS &&
+                        textX in lineHeader..<(leftMargin + textWidth) &&
+                        textY in fileHeader..<(fileHeader + textHeight)
+                    )
+                        if (set(textY - fileHeader, textX - lineHeader))
+                            if (set(textY - fileHeader, textX - lineHeader - 1))
+                                MAIN
                             else
-                                '-'
+                                DROP
                         else
-                            c
-                    }.joinToString("")
-                }.joinToString("\n")
-            }
+                            BACK
+                    else
+                        c
+                }.joinToString("")
+            }.joinToString("\n")
+        }
     }
 
 private fun KService.imgFun(
@@ -82,17 +92,24 @@ private fun KService.imgFun(
         RenderingHints.KEY_TEXT_ANTIALIASING,
         RenderingHints.VALUE_TEXT_ANTIALIAS_ON
     )
-    g2d.drawString(name, 1, (imgHeight * .8).roundToInt())
+    g2d.drawString(name.uppercase(), 1, imgHeight - 2)
     g2d.dispose()
     img.flush()
 
-//    ImageIO.write(img, "png", File("${System.getProperty("user.home")}/Downloads/$name-$type.png"))
+    ImageIO.write(img, "png", File("${System.getProperty("user.home")}/Downloads/$name-$type.png"))
 
     return { x: Int, y: Int ->
         if (x >= imgWidth || y >= imgHeight) {
-            throw IllegalArgumentException("$x >= $imgWidth || $y >= $imgHeight")
+//            throw IllegalArgumentException("$x >= $imgWidth || $y >= $imgHeight: $img")
+            false
+        } else {
+            try {
+                img.getRGB(x * squeeze, imgHeight - y) != -16777216
+            } catch (e: Exception) {
+//                throw IllegalArgumentException("$x >= $imgWidth || $y >= $imgHeight: $img", e)
+                false
+            }
         }
-        img.getRGB(x * squeeze, imgHeight - 1 - y) != -16777216
     }
 }
 
@@ -102,31 +119,32 @@ private fun properHeightFont(g2d: Graphics2D, name: String, imgHeight: Int) =
     }.map { size ->
         Font(Font.SANS_SERIF, Font.PLAIN, size)
     }.takeWhile { font ->
-        g2d.getFontMetrics(font).getStringBounds(name, g2d).height < imgHeight
+        g2d.getFontMetrics(font).height < (imgHeight * 1.5).toInt()
     }.last()
 
 private fun adorn(code: String): String =
     code.split("\n")
         .map { it.trimEnd() }
         .let { lines ->
-            lines.indexOfFirst { line -> line.startsWith("@file") }
-                .let { header ->
-                    lines.maxOf { it.length }
-                        .let { len -> (len * 1.1).toInt() }
-                        .let { len ->
-                            lines.neighborhoods(0)
-                                .mapIndexed { i, group ->
-                                    i to group
+            lines.indexOfFirst(::codeStart).let { header ->
+                lines.maxOf { it.length }
+                    .let { len ->
+                        (len * 1.1).toInt()
+                    }
+                    .let { len ->
+                        lines.neighborhoods(0)
+                            .mapIndexed { i, group ->
+                                i to group
+                            }
+                            .map { (index, group) ->
+                                group.let { (line, neighbors) ->
+                                    suffixed(index, line, neighbors, len, header)
                                 }
-                                .map { (index, group) ->
-                                    group.let { (line, neighbors) ->
-                                        suffixed(index, line, neighbors, len, header)
-                                    }
-                                }
-                                .framed()
-                        }
-                        .joinToString("\n")
-                }
+                            }
+                            .framed()
+                    }
+                    .joinToString("\n")
+            }
         }
 
 private fun <E> List<E>.neighborhoods(neighbors: Int): List<Pair<E, List<E>>> =
@@ -140,19 +158,22 @@ private const val PRE = "/* $STATICTALK */ "
 
 private const val POST = " // DO NOT TOUCH"
 
+private fun codeStart(line: String) = line.contains("@file:Suppress(")
+
 private fun suffixed(index: Int, line: String, neighbors: List<String>, maxLength: Int, header: Int) =
     (maxLength - line.length).let { buffer ->
         max(0, line.takeWhile(Char::isWhitespace).length).let { preamble ->
             (header > index).let { inHeader ->
                 shuffled(index, STATICTALK, preamble, inHeader).let { shuffled ->
-                    (if (inHeader) line else line.substring(preamble)).let { remainingLine ->
-                        PRE.replace(STATICTALK, shuffled) + remainingLine + emptySpace(
-                            line,
-                            neighbors,
-                            buffer,
-                            inHeader
-                        ) + POST
-                    }
+                    "${
+                        PRE.replace(STATICTALK, shuffled)
+                    }${
+                        if (inHeader) line else line.substring(preamble)
+                    }${
+                        emptySpace(
+                            line, neighbors, buffer, inHeader
+                        )
+                    }$POST"
                 }
             }
         }
@@ -172,7 +193,7 @@ private fun emptySpace(
             else {
                 val shift = maxOf(0, avgLength(neighbors) - line.length)
                 val commentLength = buffer - preamble
-                (if (spaced) "" else " ") + " ".repeat(shift) + "/* ${"`".repeat(commentLength - shift)} */"
+                (if (spaced) "" else " ") + " ".repeat(shift) + "/* ${"$ZAXS".repeat(commentLength - shift)} */"
             }
         }
     }
