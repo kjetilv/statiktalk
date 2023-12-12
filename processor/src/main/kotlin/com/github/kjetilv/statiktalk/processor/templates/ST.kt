@@ -32,37 +32,43 @@ internal fun String.source(
         throw IllegalStateException("Failed to render $service, ${messages.size} messages", e)
     }.trim().let(::adorn).let { bg(type, service, it) }
 
-private const val MAIN = '#'
+private const val MAIN = "#"
 
-private const val DROP = '|'
+private const val DROP = "#"
 
-private const val BACK = '-'
+private const val BACK = "."
 
-private const val ZAXS = '`'
+private const val ZAXS = "`"
 
 private fun bg(type: String, service: KService, code: String) =
     code.split("\n").let { lines ->
-        lines.indexOfFirst(::codeStart).let { fileHeader ->
+        lines.indexOfFirst(::codeStart).let { offset ->
 
-            val rightMargin = lines.map { it.indexOf(" */ // DO NOT TOUCH") }.first { it > 0 }
-            val leftMargin = PRE.length
+            val rMargin = lines.map { it.indexOf(" */ // DO NOT TOUCH") }.first { it > 0 }
+            val lMargin = PRE.length
 
-            val textWidth = rightMargin - leftMargin
-            val textHeight = lines.size - fileHeader - 1
+            val tw = rMargin - lMargin
+            val th = lines.size - offset - 1
 
-            val textShift = (textWidth * 0.4).roundToInt()
-            val lineHeader = PRE.length + textShift
+            val shift = (tw * .4).roundToInt()
+            val indent = PRE.length + shift
 
-            val set: (Int, Int) -> Boolean = service.imgFun(type, textHeight, textWidth, textShift, 4)
+            infix fun Int.xy(y: Int) =
+                service.imgFun(type, th, tw, shift, 4).let { it(this, y) }
 
-            lines.mapIndexed { textY, line ->
-                line.toCharArray().mapIndexed { textX, c ->
-                    if (c == ZAXS &&
-                        textX in lineHeader..<(leftMargin + textWidth) &&
-                        textY in fileHeader..<(fileHeader + textHeight)
+            lines.mapIndexed { ty, line ->
+                line.toCharArray().mapIndexed { tx, c ->
+                    if (
+                        "$c" == ZAXS &&
+                        tx in indent..<(lMargin + tw) &&
+                        ty in offset..<(offset + th)
                     )
-                        if (set(textY - fileHeader, textX - lineHeader))
-                            if (set(textY - fileHeader, textX - lineHeader - 1))
+                        if (
+                            (ty - offset) xy (tx - indent)
+                        )
+                            if (
+                                (ty - offset) xy (tx - indent - 1) && (ty - offset) xy (tx - indent + 1)
+                            )
                                 MAIN
                             else
                                 DROP
@@ -117,7 +123,7 @@ private fun properHeightFont(g2d: Graphics2D, name: String, imgHeight: Int) =
     generateSequence(20) { size ->
         size + 1
     }.map { size ->
-        Font(Font.SANS_SERIF, Font.PLAIN, size)
+        Font(Font.MONOSPACED, Font.PLAIN, size)
     }.takeWhile { font ->
         g2d.getFontMetrics(font).height < (imgHeight * 1.5).toInt()
     }.last()
@@ -193,7 +199,7 @@ private fun emptySpace(
             else {
                 val shift = maxOf(0, avgLength(neighbors) - line.length)
                 val commentLength = buffer - preamble
-                (if (spaced) "" else " ") + " ".repeat(shift) + "/* ${"$ZAXS".repeat(commentLength - shift)} */"
+                (if (spaced) "" else " ") + " ".repeat(shift) + "/* ${ZAXS.repeat(commentLength - shift)} */"
             }
         }
     }
