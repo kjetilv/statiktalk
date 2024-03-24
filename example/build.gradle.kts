@@ -2,7 +2,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
 plugins {
     kotlin("jvm")
-    id("com.google.devtools.ksp") version "1.9.20-1.0.14"
+    id("com.google.devtools.ksp") version "1.9.23-1.0.19"
 }
 
 repositories {
@@ -24,7 +24,7 @@ tasks.withType<Test> {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.20")
+//    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk:1.9.23")
 
     implementation(project(":api"))
     implementation(project(":processor"))
@@ -43,6 +43,6 @@ dependencies {
 
 kotlin {
     jvmToolchain {
-        this.languageVersion.set(JavaLanguageVersion.of(17))
+        this.languageVersion.set(JavaLanguageVersion.of(21))
     }
 }

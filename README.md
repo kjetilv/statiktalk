@@ -103,6 +103,7 @@ rapids.handleHelloWorld(
     helloWorld,
     reqs = HelloWorldReqs(
         name = notValue("Bjarne"),
+        nickName = empty(), // We hate nicknames
         greeting = value("Davs")
     )
 )

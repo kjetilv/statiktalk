@@ -22,7 +22,12 @@ internal object Messages {
             .mapValues { (service, funDecls) ->
                 verified(funDecls).map { functionDecl ->
                     verified(service, functionDecl).let { verifiedFunctionDecl ->
-                        kMessage(service, verifiedFunctionDecl, contextType, verifiedFunctionDecl.findAnno(ANNOTATION_SHORT_NAME))
+                        kMessage(
+                            service,
+                            verifiedFunctionDecl,
+                            contextType,
+                            verifiedFunctionDecl.findAnno(ANNOTATION_SHORT_NAME)
+                        )
                     }
                 }
             }
@@ -32,7 +37,12 @@ internal object Messages {
             .associateBy(::kService)
             .mapValues { (service, classDecl) ->
                 classDecl.getDeclaredFunctions().map { functionDecl ->
-                    kMessage(service, verified(service, functionDecl), contextType, classDecl.findAnno(ANNOTATION_SHORT_NAME))
+                    kMessage(
+                        service,
+                        verified(service, functionDecl),
+                        contextType,
+                        classDecl.findAnno(ANNOTATION_SHORT_NAME)
+                    )
                 }.toList()
             }
 
@@ -40,20 +50,25 @@ internal object Messages {
 
     private val ANNOTATION_SHORT_NAME = Message::class.java.simpleName
 
-    private fun declaringClass(decl: KSFunctionDeclaration) =
-        (decl.parentDeclaration as? KSClassDeclaration)
-            ?.takeIf { it.classKind == ClassKind.INTERFACE }
-            ?: throw IllegalStateException("An interface is needed to hold $decl")
-
-    private fun kService(decl: KSClassDeclaration) =
-        KService(
-            decl.packageName.asString(),
-            "${decl.packageName.asString()}.generated",
-            decl.simpleName.asString(),
-            decl.containingFile
+    private fun declaringClass(decl: KSFunctionDeclaration) = (decl.parentDeclaration as? KSClassDeclaration)
+        ?.takeIf { it.classKind == ClassKind.INTERFACE }
+        ?: throw IllegalStateException(
+            "An interface type is needed to hold $decl, found: ${decl.parentDeclaration}"
         )
 
-    private fun kMessage(service: KService, decl: KSFunctionDeclaration, contextType: KSName, anno: KSAnnotation): KMessage {
+    private fun kService(decl: KSClassDeclaration) = KService(
+        decl.packageName.asString(),
+        "${decl.packageName.asString()}.generated",
+        decl.simpleName.asString(),
+        decl.containingFile
+    )
+
+    private fun kMessage(
+        service: KService,
+        decl: KSFunctionDeclaration,
+        contextType: KSName,
+        anno: KSAnnotation
+    ): KMessage {
         val params = decl.parameters
         val lastParam = params.lastOrNull()
         val contextArg = if (isContextArg(lastParam, contextType)) lastParam?.name?.asString() else null

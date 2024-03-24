@@ -23,27 +23,35 @@ interface Context {
 
     val context: MessageContext
 
-    operator fun set(key: String, value: String) { packet[key] = value }
+    operator fun set(key: String, value: String) {
+        packet[key] = value
+    }
 
-    operator fun set(key: String, value: Boolean) { packet[key] = value }
+    operator fun set(key: String, value: Boolean) {
+        packet[key] = value
+    }
 
-    operator fun set(key: String, value: Long) { packet[key] = value }
+    operator fun set(key: String, value: Long) {
+        packet[key] = value
+    }
 
-    operator fun set(key: String, value: BigDecimal) { packet[key] = value }
+    operator fun set(key: String, value: BigDecimal) {
+        packet[key] = value
+    }
 
     operator fun get(key: String) =
-            node(key)?.let {
-                when (it) {
-                    is TextNode -> it.textValue()
-                    is BooleanNode -> it.booleanValue()
-                    is BigIntegerNode -> it.bigIntegerValue()
-                    is DecimalNode -> it.decimalValue()
-                    is NumericNode -> it.numberValue()
-                    is NullNode, is MissingNode -> null
-                    else ->
-                        throw IllegalStateException("$key has unsupported node type: " + it.nodeType)
-                }
+        node(key)?.let {
+            when (it) {
+                is TextNode -> it.textValue()
+                is BooleanNode -> it.booleanValue()
+                is BigIntegerNode -> it.bigIntegerValue()
+                is DecimalNode -> it.decimalValue()
+                is NumericNode -> it.numberValue()
+                is NullNode, is MissingNode -> null
+                else ->
+                    throw IllegalStateException("$key has unsupported node type: " + it.nodeType)
             }
+        }
 
     fun getString(key: String) = node(key)?.textValue()
 

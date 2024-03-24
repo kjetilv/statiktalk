@@ -11,35 +11,43 @@ import com.github.kjetilv.statiktalk.example.generated.typed
 import com.github.kjetilv.statiktalk.test.Factoids
 import com.github.kjetilv.statiktalk.test.generated.factoids
 import com.github.kjetilv.statiktalk.test.generated.handleFactoids
+import io.ktor.server.engine.*
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
+import no.nav.helse.rapids_rivers.ConsumerProducerFactory
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
-import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.Consumer
-import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.common.config.SaslConfigs
-import org.apache.kafka.common.serialization.StringDeserializer
+import org.awaitility.Awaitility.await
 import org.junit.jupiter.api.*
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.shaded.com.google.common.util.concurrent.AtomicDouble
-import org.testcontainers.shaded.org.awaitility.Awaitility.await
+import org.testcontainers.shaded.org.awaitility.Awaitility
 import org.testcontainers.utility.DockerImageName
+import java.io.IOException
 import java.math.BigDecimal
 import java.math.BigInteger
+import java.net.HttpURLConnection
 import java.net.ServerSocket
+import java.net.URL
 import java.time.Duration
 import java.util.concurrent.TimeUnit.SECONDS
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.collections.firstOrNull
+import kotlin.collections.forEach
+import kotlin.collections.listOf
+import kotlin.collections.map
+import kotlin.collections.mutableListOf
+import kotlin.collections.mutableMapOf
 import kotlin.collections.set
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-internal class StatikTalkTest {
+internal class StaticTalkTest {
 
     private val objectMapper = jacksonObjectMapper()
         .registerModule(JavaTimeModule())
@@ -50,6 +58,10 @@ internal class StatikTalkTest {
 
     private val kafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.2.1"))
 
+    private val localConfig = LocalKafkaConfig(kafkaContainer)
+
+    private val factory = ConsumerProducerFactory(localConfig)
+
     private lateinit var appUrl: String
 
     private lateinit var testConsumer: Consumer<String, String>
@@ -58,13 +70,11 @@ internal class StatikTalkTest {
 
     private val messages = mutableListOf<String>()
 
-    private val factoid = mutableMapOf<String, String>()
-
     @DelicateCoroutinesApi
     @BeforeAll
     internal fun setup() {
         kafkaContainer.start()
-        testConsumer = KafkaConsumer(consumerProperties(), StringDeserializer(), StringDeserializer()).apply {
+        testConsumer = factory.createConsumer("test-consumer").apply {
             subscribe(listOf(testTopic))
         }
         consumerJob = GlobalScope.launch {
@@ -84,7 +94,64 @@ internal class StatikTalkTest {
         messages.clear()
     }
 
-    @Disabled
+    private fun waitForEvent(event: String): JsonNode? {
+        return await("wait until $event")
+            .atMost(60, SECONDS)
+            .until({
+                messages.map { objectMapper.readTree(it) }
+                    .firstOrNull { it.path("@event_name").asText() == event }
+            }) { it != null }
+    }
+
+    private fun response(path: String) =
+        URL("$appUrl$path").openStream().use { it.bufferedReader().readText() }
+
+    private fun isOkResponse(path: String): Boolean {
+        var conn: HttpURLConnection? = null
+        try {
+            conn = (URL("$appUrl$path").openConnection() as HttpURLConnection)
+            return conn.responseCode in 200..299
+        } catch (err: IOException) {
+            System.err.println("$appUrl$path: ${err.message}")
+            //err.printStackTrace(System.err)
+        } finally {
+            conn?.disconnect()
+        }
+        return false
+    }
+
+    @DelicateCoroutinesApi
+    private fun withRapid(
+        ktor: (port: Int) -> ApplicationEngine? = { null },
+        collectorRegistry: CollectorRegistry = CollectorRegistry(),
+        block: (RapidsConnection) -> Unit
+    ) {
+        val randomPort = ServerSocket(0).use { it.localPort }
+        appUrl = "http://localhost:$randomPort"
+        val rapidApplicationConfig = RapidApplication.RapidApplicationConfig(
+            appName = "app-name",
+            instanceId = "app-name-0",
+            rapidTopic = testTopic,
+            kafkaConfig = localConfig,
+            consumerGroupId = "component-test",
+            httpPort = randomPort,
+            collectorRegistry = collectorRegistry
+        )
+        val builder = RapidApplication.Builder(rapidApplicationConfig)
+        ktor(randomPort)?.let { builder.withKtor(it) }
+        val rapidsConnection = builder.build()
+        val job = GlobalScope.launch { rapidsConnection.start() }
+        try {
+            block(rapidsConnection)
+        } finally {
+            rapidsConnection.stop()
+            runBlocking { job.cancelAndJoin() }
+        }
+    }
+
+    private val factoid = mutableMapOf<String, String>()
+
+//    @Disabled
     @DelicateCoroutinesApi
     @Test
     fun `should annoy people with interesting factoids on random subject matter`() {
@@ -167,7 +234,8 @@ internal class StatikTalkTest {
                 }
             })
 
-            requireNotNull(await("wait for types")
+            requireNotNull(
+                Awaitility.await("wait for types")
                 .atMost(10, SECONDS)
                 .until({
                     bigA.get().intValueExact()
@@ -186,59 +254,9 @@ internal class StatikTalkTest {
     }
 
     private fun waitForFactoid(topic: String) =
-        await("wait for $topic factoid")
+        Awaitility.await("wait for $topic factoid")
             .atMost(10, SECONDS)
             .until({
                 factoid[topic]
             }) { it != null }
-
-    private fun waitForEvent(event: String): JsonNode? {
-        return await("wait until $event")
-            .atMost(10, SECONDS)
-            .until({
-                messages.map { objectMapper.readTree(it) }
-                    .firstOrNull { it.path("@event_name").asText() == event }
-            }) { it != null }
-    }
-
-    private fun consumerProperties(): MutableMap<String, Any> {
-        return HashMap<String, Any>().apply {
-            put(CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG, kafkaContainer.bootstrapServers)
-            put(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, "PLAINTEXT")
-            put(SaslConfigs.SASL_MECHANISM, "PLAIN")
-            put(ConsumerConfig.GROUP_ID_CONFIG, "test-consumer")
-            put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
-        }
-    }
-
-    private fun createConfig(): Map<String, String> {
-        val randomPort = ServerSocket(0).use { it.localPort }
-        appUrl = "http://localhost:$randomPort"
-        return mapOf(
-            "KAFKA_BOOTSTRAP_SERVERS" to kafkaContainer.bootstrapServers,
-            "KAFKA_CONSUMER_GROUP_ID" to "component-test",
-            "KAFKA_RAPID_TOPIC" to testTopic,
-            "RAPID_APP_NAME" to "app-name",
-            "HTTP_PORT" to "$randomPort"
-        )
-    }
-
-    @DelicateCoroutinesApi
-    private fun withRapid(
-        builder: RapidApplication.Builder? = null,
-        collectorRegistry: CollectorRegistry = CollectorRegistry(),
-        block: (RapidsConnection) -> Unit
-    ) {
-        val rapidsConnection =
-            (builder ?: RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(createConfig())))
-                .withCollectorRegistry(collectorRegistry)
-                .build()
-        val job = GlobalScope.launch { rapidsConnection.start() }
-        try {
-            block(rapidsConnection)
-        } finally {
-            rapidsConnection.stop()
-            runBlocking { job.cancelAndJoin() }
-        }
-    }
 }

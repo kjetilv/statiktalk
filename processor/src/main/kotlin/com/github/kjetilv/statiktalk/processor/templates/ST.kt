@@ -15,7 +15,6 @@ import javax.imageio.ImageIO
 import kotlin.math.max
 import kotlin.math.roundToInt
 
-
 internal fun String.source(
     type: String,
     service: KService,

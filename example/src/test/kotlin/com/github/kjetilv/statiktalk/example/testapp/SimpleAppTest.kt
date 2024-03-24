@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.github.kjetilv.statiktalk.LocalKafkaConfig
 import com.github.kjetilv.statiktalk.api.Context
 import com.github.kjetilv.statiktalk.api.Require.empty
 import com.github.kjetilv.statiktalk.api.Require.notValue
@@ -11,22 +12,22 @@ import com.github.kjetilv.statiktalk.api.Require.value
 import com.github.kjetilv.statiktalk.example.testapp.db.MemorySessionDb
 import com.github.kjetilv.statiktalk.example.testapp.shared.*
 import com.github.kjetilv.statiktalk.example.testapp.shared.generated.*
+import io.ktor.server.engine.*
 import io.prometheus.client.CollectorRegistry
 import kotlinx.coroutines.*
+import no.nav.helse.rapids_rivers.ConsumerProducerFactory
 import no.nav.helse.rapids_rivers.RapidApplication
 import no.nav.helse.rapids_rivers.RapidsConnection
-import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.Consumer
-import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.apache.kafka.common.config.SaslConfigs
-import org.apache.kafka.common.serialization.StringDeserializer
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.testcontainers.containers.KafkaContainer
 import org.testcontainers.shaded.org.awaitility.Awaitility.await
 import org.testcontainers.utility.DockerImageName
+import java.io.IOException
+import java.net.HttpURLConnection
 import java.net.ServerSocket
+import java.net.URL
 import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
@@ -38,13 +39,17 @@ import java.util.concurrent.atomic.AtomicReference
 internal class SimpleAppTest {
 
     private val objectMapper = jacksonObjectMapper()
-            .registerModule(JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+        .registerModule(JavaTimeModule())
+        .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
 
 
     private val testTopic = "a-test-topic"
 
     private val kafkaContainer = KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.2.1"))
+
+    private val localConfig = LocalKafkaConfig(kafkaContainer)
+
+    private val factory = ConsumerProducerFactory(localConfig)
 
     private lateinit var appUrl: String
 
@@ -58,7 +63,7 @@ internal class SimpleAppTest {
     @BeforeAll
     internal fun setup() {
         kafkaContainer.start()
-        testConsumer = KafkaConsumer(consumerProperties(), StringDeserializer(), StringDeserializer()).apply {
+        testConsumer = factory.createConsumer("test-consumer").apply {
             subscribe(listOf(testTopic))
         }
         consumerJob = GlobalScope.launch {
@@ -78,6 +83,61 @@ internal class SimpleAppTest {
         messages.clear()
     }
 
+    private fun waitForEvent(event: String): JsonNode? {
+        return await("wait until $event")
+            .atMost(60, SECONDS)
+            .until({
+                messages.map { objectMapper.readTree(it) }
+                    .firstOrNull { it.path("@event_name").asText() == event }
+            }) { it != null }
+    }
+
+    private fun response(path: String) =
+        URL("$appUrl$path").openStream().use { it.bufferedReader().readText() }
+
+    private fun isOkResponse(path: String): Boolean {
+        var conn: HttpURLConnection? = null
+        try {
+            conn = (URL("$appUrl$path").openConnection() as HttpURLConnection)
+            return conn.responseCode in 200..299
+        } catch (err: IOException) {
+            System.err.println("$appUrl$path: ${err.message}")
+            //err.printStackTrace(System.err)
+        } finally {
+            conn?.disconnect()
+        }
+        return false
+    }
+
+    @DelicateCoroutinesApi
+    private fun withRapid(
+        ktor: (port: Int) -> ApplicationEngine? = { null },
+        collectorRegistry: CollectorRegistry = CollectorRegistry(),
+        block: (RapidsConnection) -> Unit
+    ) {
+        val randomPort = ServerSocket(0).use { it.localPort }
+        appUrl = "http://localhost:$randomPort"
+        val rapidApplicationConfig = RapidApplication.RapidApplicationConfig(
+            appName = "app-name",
+            instanceId = "app-name-0",
+            rapidTopic = testTopic,
+            kafkaConfig = localConfig,
+            consumerGroupId = "component-test",
+            httpPort = randomPort,
+            collectorRegistry = collectorRegistry
+        )
+        val builder = RapidApplication.Builder(rapidApplicationConfig)
+        ktor(randomPort)?.let { builder.withKtor(it) }
+        val rapidsConnection = builder.build()
+        val job = GlobalScope.launch { rapidsConnection.start() }
+        try {
+            block(rapidsConnection)
+        } finally {
+            rapidsConnection.stop()
+            runBlocking { job.cancelAndJoin() }
+        }
+    }
+
     //
     // Simple app which reacts to user logins and processes specially authorized users,  enriching them with
     // various additional data.
@@ -85,7 +145,7 @@ internal class SimpleAppTest {
     @DelicateCoroutinesApi
     @Test
     fun `should login and collect information`() {
-        // A ticking clock, each time we look at it a day has passed
+        // An observer-driven quantum clock: Each time we look at it a day has passed
         val now = AtomicReference(Instant.EPOCH)
         val time = {
             now.getAndUpdate {
@@ -97,16 +157,16 @@ internal class SimpleAppTest {
         //
         // Authorized users.  They have their own numeric key.
         val authorizedUsers = mapOf(
-                "foo41" to "012",
-                "foo42" to "123",
-                "msuser" to "999",
-                "kv" to "234",
-                "zot" to "345"
+            "foo41" to "012",
+            "foo42" to "123",
+            "msuser" to "999",
+            "kv" to "234",
+            "zot" to "345"
         )
         // Status for the various users
         val statusMap = mapOf(
-                "foo42" to "elite",
-                "kv" to "harmless"
+            "foo42" to "elite",
+            "kv" to "harmless"
         )
         // Returning customers we know of
         val frequentCustomers = setOf("foo42")
@@ -121,9 +181,9 @@ internal class SimpleAppTest {
         val eliteLogins = mutableSetOf<String>()
         // ... and from the harmless types
         val harmlessLogins = mutableSetOf<String>()
-        // ... and from unwashed masses
+        // ... and from the unwashed masses
         val unauth = mutableMapOf<String, String>()
-        // These are the channels we got messages from
+        // A collector recording the channels we've received messages from
         val channelsReceived = mutableSetOf<String>()
 
         // Set up the app and fire some login attempts out on the bus
@@ -132,18 +192,20 @@ internal class SimpleAppTest {
             waitForEvent("application_up")
 
             // Captures and broadcasts login attempts, and records which channels they came from
-            val loginAttempted = object : LoginAttempt {
+            val loginAttempt = object : LoginAttempt {
                 override fun loginAttempted(
-                        userId: String,
-                        channel: String?,
-                        browser: String?,
-                        externalId: String?,
-                        context: Context
+                    userId: String,
+                    channel: String?,
+                    browser: String?,
+                    externalId: String?,
+                    context: Context
                 ) {
                     channelsReceived += (channel ?: "")
                     context["loginTime"] = time()
-                    rapids.authorization()
-                            .userLoggedIn(userId, context)
+                    rapids.authorization().userLoggedIn(
+                        userId,
+                        context
+                    )
                 }
             }
 
@@ -151,8 +213,7 @@ internal class SimpleAppTest {
             val authorization = object : Authorization {
                 override fun userLoggedIn(userId: String, context: Context) {
                     authorizedUsers[userId]?.let { key ->
-                        rapids.sessions()
-                                .loggedIn(userId, key, context = context)
+                        rapids.sessions().loggedIn(userId, key, context = context)
                     } ?: rapids.unauthorized().unknownuser(userId, context = context)
                 }
             }
@@ -184,12 +245,13 @@ internal class SimpleAppTest {
 
             // Handle logins, though only for the website channel
             rapids.handleLoginAttempt(
-                    loginAttempted,
-                    reqs = LoginAttemptReqs(
-                            channel = value("website"),  // Only accept website logins (require value)
-                            browser = notValue("msie"), // Reject dangeours browsers (reject value)
-                            externalId = empty()          // Stay away from logins handled by others (reject key)
-                    )) {
+                loginAttempt,
+                reqs = LoginAttemptReqs(
+                    channel = value("website"),  // Only accept website logins (require value)
+                    browser = notValue("msie"), // Reject dangeours browsers (reject value)
+                    externalId = empty()          // Stay away from logins handled by others (reject key)
+                )
+            ) {
                 rejectKey("foobar") // Drop down to R&R for custom requirements
             }
 
@@ -205,6 +267,7 @@ internal class SimpleAppTest {
                     rapids.sessions().userHasStatus(userId, userKey, it)
                 }
             })
+
             rapids.handleAuthorizedUserEnricher({ userId, userKey ->
                 if (frequentCustomers.contains(userId)) {
                     rapids.sessions().userIsReturning(userId, userKey, true)
@@ -213,14 +276,16 @@ internal class SimpleAppTest {
 
             // Hook on to status=elite and store it
             rapids.handleStatusProcessor(
-                    eliteStatusReorder,
-                    reqs = StatusProcessorReqs(status = value("elite")))
+                eliteStatusReorder,
+                reqs = StatusProcessorReqs(status = value("elite"))
+            )
 
             // Hook on to status=harmless and store it
             rapids.handleStatusProcessor(
-                    harmlessStatusProcessor,
-                    reqs = StatusProcessorReqs(
-                            status = value("harmless"))
+                harmlessStatusProcessor,
+                reqs = StatusProcessorReqs(
+                    status = value("harmless")
+                )
             )
 
             // Backend service, stores sesssion information on authorized users
@@ -240,28 +305,28 @@ internal class SimpleAppTest {
             }
 
             await("wait until settled")
-                    .atMost(10, SECONDS)
-                    .until {
-                        sessionDb.sessions().any {
-                            it == User(
-                                    userId = "foo42",
-                                    userKey = "123",
-                                    status = "elite",
-                                    returning = true
-                            )
-                        } && sessionDb.sessions().any {
-                            it == User(
-                                    userId = "kv",
-                                    userKey = "234",
-                                    status = "harmless"
-                            )
-                        } && sessionDb.sessions().any {
-                            it == User(
-                                    userId = "zot",
-                                    userKey = "345"
-                            )
-                        } && unauth.size == 2
-                    }
+                .atMost(10, SECONDS)
+                .until {
+                    sessionDb.sessions().any {
+                        it == User(
+                            userId = "foo42",
+                            userKey = "123",
+                            status = "elite",
+                            returning = true
+                        )
+                    } && sessionDb.sessions().any {
+                        it == User(
+                            userId = "kv",
+                            userKey = "234",
+                            status = "harmless"
+                        )
+                    } && sessionDb.sessions().any {
+                        it == User(
+                            userId = "zot",
+                            userKey = "345"
+                        )
+                    } && unauth.size == 2
+                }
         }
 
         assertEquals(3, eventsLog.size)
@@ -282,53 +347,5 @@ internal class SimpleAppTest {
         // Should only see "website" here, nothing else should reach us
         assertEquals(1, channelsReceived.size)
         assertEquals("website", channelsReceived.toList()[0])
-    }
-
-    private fun waitForEvent(event: String): JsonNode? {
-        return await("wait until $event")
-                .atMost(10, SECONDS)
-                .until({
-                    messages.map { objectMapper.readTree(it) }
-                            .firstOrNull { it.path("@event_name").asText() == event }
-                }) { it != null }
-    }
-
-    private fun consumerProperties(): Map<String, Any> = mapOf(
-            CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG to kafkaContainer.bootstrapServers,
-            CommonClientConfigs.SECURITY_PROTOCOL_CONFIG to "PLAINTEXT",
-            SaslConfigs.SASL_MECHANISM to "PLAIN",
-            ConsumerConfig.GROUP_ID_CONFIG to "test-consumer",
-            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest"
-    )
-
-    private fun createConfig(): Map<String, String> {
-        val randomPort = ServerSocket(0).use { it.localPort }
-        appUrl = "http://localhost:$randomPort"
-        return mapOf(
-                "KAFKA_BOOTSTRAP_SERVERS" to kafkaContainer.bootstrapServers,
-                "KAFKA_CONSUMER_GROUP_ID" to "component-test",
-                "KAFKA_RAPID_TOPIC" to testTopic,
-                "RAPID_APP_NAME" to "app-name",
-                "HTTP_PORT" to "$randomPort"
-        )
-    }
-
-    @DelicateCoroutinesApi
-    private fun withRapid(
-            builder: RapidApplication.Builder? = null,
-            collectorRegistry: CollectorRegistry = CollectorRegistry(),
-            block: (RapidsConnection) -> Unit
-    ) {
-        val rapidsConnection =
-                (builder ?: RapidApplication.Builder(RapidApplication.RapidApplicationConfig.fromEnv(createConfig())))
-                        .withCollectorRegistry(collectorRegistry)
-                        .build()
-        val job = GlobalScope.launch { rapidsConnection.start() }
-        try {
-            block(rapidsConnection)
-        } finally {
-            rapidsConnection.stop()
-            runBlocking { job.cancelAndJoin() }
-        }
     }
 }
